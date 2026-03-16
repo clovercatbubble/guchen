@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L的单词本 🌸</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-gradient-1: #faf4ed;
+            --bg-gradient-2: #ede0d4;
+            --card-front: #ffffff;
+            --card-back: #f8f0e3;
+            --accent-pink: #e8aeb7;
+            --accent-blue: #b8c5d6;
+            --accent-purple: #c8b8d6;
+            --accent-green: #b8d6c5;
+            --text-dark: #3d3d3d;
+            --text-light: #6b6b6b;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(232, 174, 183, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(184, 197, 214, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(200, 184, 214, 0.15) 0%, transparent 50%);
+            animation: float 30s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 3.5em;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1em;
+            color: var(--text-light);
+            font-weight: 400;
+        }
+
+        .add-word-section {
+            max-width: 600px;
+            margin: 0 auto 50px;
+            background: white;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px var(--shadow);
+            animation: slideUp 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .add-word-section h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 0 4px rgba(232, 174, 183, 0.1);
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn-add {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-purple) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(232, 174, 183, 0.3);
+        }
+
+        .btn-add:active {
+            transform: translateY(0);
+        }
+
+        .cards-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+
+        .card-wrapper {
+            perspective: 1000px;
+            animation: cardAppear 0.6s ease-out both;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .card {
+            width: 100%;
+            height: 350px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .card-front {
+            background: var(--card-front);
+            border: 3px solid transparent;
+            background-image: linear-gradient(white, white), 
+                            linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+        }
+
+        .card-back {
+            background: var(--card-back);
+            transform: rotateY(180deg);
+        }
+
+        .word-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.5em;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .phonetic {
+            font-size: 1.1em;
+            color: var(--accent-purple);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .level-indicator {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .level-unfamiliar { background: rgba(232, 174, 183, 0.2); color: #d4758f; }
+        .level-seen { background: rgba(240, 178, 122, 0.2); color: #d4925f; }
+        .level-know { background: rgba(240, 210, 122, 0.2); color: #d4bc5f; }
+        .level-familiar { background: rgba(184, 214, 197, 0.2); color: #5fa67c; }
+        .level-mastered { background: rgba(184, 197, 214, 0.2); color: #5f85a6; }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .tag {
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .tag-cet4 { background: rgba(184, 197, 214, 0.3); color: #5f85a6; }
+        .tag-cet6 { background: rgba(184, 214, 197, 0.3); color: #5fa67c; }
+        .tag-ielts { background: rgba(200, 184, 214, 0.3); color: #8f5fa6; }
+        .tag-toefl { background: rgba(240, 178, 122, 0.3); color: #d4925f; }
+        .tag-common { background: rgba(232, 174, 183, 0.3); color: #d4758f; }
+        .tag-new { background: rgba(214, 84, 84, 0.3); color: #a63d3d; }
+
+        .definition {
+            font-size: 1.2em;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .example {
+            font-style: italic;
+            color: var(--text-light);
+            font-size: 1em;
+            line-height: 1.6;
+            border-left: 3px solid var(--accent-pink);
+            padding-left: 15px;
+        }
+
+        .flip-hint {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-top: 20px;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5em;
+            }
+            
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>L的单词本 🌸</h1>
+        <p class="subtitle">点击卡片翻转查看释义</p>
+    </div>
+
+    <div class="add-word-section">
+        <h2>添加新单词</h2>
+        <div class="input-group">
+            <label>单词</label>
+            <input type="text" id="wordInput" placeholder="输入单词">
+        </div>
+        <div class="input-group">
+            <label>音标</label>
+            <input type="text" id="phoneticInput" placeholder="/ˌserənˈdɪpəti/">
+        </div>
+        <div class="input-group">
+            <label>释义</label>
+            <textarea id="definitionInput" placeholder="n. 意外发现美好事物的能力"></textarea>
+        </div>
+        <div class="input-group">
+            <label>例句(可选)</label>
+            <textarea id="exampleInput" placeholder="Meeting you was pure serendipity."></textarea>
+        </div>
+        <button class="btn-add" onclick="addWord()">添加单词</button>
+    </div>
+
+    <div class="cards-container" id="cardsContainer">
+        <!-- 示例卡片 -->
+    </div>
+
+    <script>
+        const words = [
+            {
+                word: 'serendipity',
+                phonetic: '/ˌserənˈdɪpəti/',
+                definition: 'n. 意外发现美好事物的能力;机缘巧合',
+                example: 'Meeting you was pure serendipity.',
+                level: 'unfamiliar',
+                tags: ['common', 'new']
+            },
+            {
+                word: 'ephemeral',
+                phonetic: '/ɪˈfemərəl/',
+                definition: 'adj. 短暂的;朝生暮死的',
+                example: 'The beauty of cherry blossoms is ephemeral.',
+                level: 'unfamiliar',
+                tags: ['ielts', 'new']
+            },
+            {
+                word: 'resilient',
+                phonetic: '/rɪˈzɪliənt/',
+                definition: 'adj. 有韧性的;能迅速恢复的',
+                example: "She's remarkably resilient despite all the challenges.",
+                level: 'seen',
+                tags: ['cet6', 'common']
+            }
+        ];
+
+        const levelMap = {
+            'unfamiliar': '陌生',
+            'seen': '见过',
+            'know': '认识',
+            'familiar': '熟悉',
+            'mastered': '掌握'
+        };
+
+        const tagNameMap = {
+            'cet4': 'CET4',
+            'cet6': 'CET6',
+            'ielts': 'IELTS',
+            'toefl': 'TOEFL',
+            'common': '常用',
+            'new': '生词'
+        };
+
+        function createCard(wordData, index) {
+            const levelClass = `level-${wordData.level}`;
+            
+            const tagsHTML = wordData.tags.map(tag => 
+                `<span class="tag tag-${tag}">${tagNameMap[tag]}</span>`
+            ).join('');
+
+            return `
+                <div class="card-wrapper" style="animation-delay: ${index * 0.1}s">
+                    <div class="card" onclick="this.classList.toggle('flipped')">
+                        <div class="card-face card-front">
+                            <div class="word-title">${wordData.word}</div>
+                            <div class="phonetic">${wordData.phonetic}</div>
+                            <div class="level-indicator ${levelClass}">${levelMap[wordData.level]}</div>
+                            <div class="tags">${tagsHTML}</div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="definition">${wordData.definition}</div>
+                            ${wordData.example ? `<div class="example">${wordData.example}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = words.map((word, index) => createCard(word, index)).join('');
+        }
+
+        function addWord() {
+            const word = document.getElementById('wordInput').value.trim();
+            const phonetic = document.getElementById('phoneticInput').value.trim();
+            const definition = document.getElementById('definitionInput').value.trim();
+            const example = document.getElementById('exampleInput').value.trim();
+
+            if (!word || !phonetic || !definition) {
+                alert('请填写单词、音标和释义');
+                return;
+            }
+
+            words.unshift({
+                word,
+                phonetic,
+                definition,
+                example,
+                level: 'unfamiliar',
+                tags: ['new']
+            });
+
+            // 清空输入框
+            document.getElementById('wordInput').value = '';
+            document.getElementById('phoneticInput').value = '';
+            document.getElementById('definitionInput').value = '';
+            document.getElementById('exampleInput').value = '';
+
+            renderCards();
+        }
+
+        // 初始渲染
+        renderCards();
+    </script>
+</body>
+</html>

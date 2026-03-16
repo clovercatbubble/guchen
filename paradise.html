@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顾沉和崽的游乐园 · 便携版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #2d1b3d 0%, #1a0f2e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #f5f1e8;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 月光效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -20%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(245, 241, 232, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #b8a5d6 0%, #f5f1e8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(184, 165, 214, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #b8a5d6;
+            margin-bottom: 40px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(184, 165, 214, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(184, 165, 214, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(245, 241, 232, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(184, 165, 214, 0.4);
+            box-shadow: 0 8px 30px rgba(184, 165, 214, 0.2);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card h2 {
+            color: #f5f1e8;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2::before {
+            content: '✦';
+            color: #b8a5d6;
+            font-size: 0.8em;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid rgba(184, 165, 214, 0.3);
+            border-radius: 8px;
+            background: rgba(29, 17, 43, 0.5);
+            color: #f5f1e8;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #b8a5d6;
+            box-shadow: 0 0 15px rgba(184, 165, 214, 0.2);
+        }
+
+        button {
+            background: linear-gradient(135deg, #7c5fa0 0%, #5d4573 100%);
+            color: #f5f1e8;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #8d6fb1 0%, #6e5684 100%);
+            box-shadow: 0 5px 20px rgba(124, 95, 160, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .output {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(29, 17, 43, 0.6);
+            border-radius: 8px;
+            min-height: 60px;
+            border-left: 3px solid #b8a5d6;
+            line-height: 1.6;
+        }
+
+        .tree-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .tree {
+            font-size: 3em;
+            transition: all 0.5s ease;
+        }
+
+        .mood-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .mood-btn {
+            padding: 10px;
+            font-size: 0.9em;
+        }
+
+        .dice-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .dice {
+            font-size: 4em;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+
+        .dice:hover {
+            transform: scale(1.1) rotate(10deg);
+        }
+
+        .dice.rolling {
+            animation: roll 0.5s ease;
+        }
+
+        @keyframes roll {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+        }
+
+        .word-card {
+            background: rgba(29, 17, 43, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .word-main {
+            font-size: 2em;
+            color: #b8a5d6;
+            margin-bottom: 10px;
+        }
+
+        .word-phonetic {
+            color: #8d7aa3;
+            margin-bottom: 15px;
+        }
+
+        .word-meaning {
+            line-height: 1.8;
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(184, 165, 214, 0.3);
+            pointer-events: none;
+            animation: ripple-effect 0.6s ease-out;
+        }
+
+        @keyframes ripple-effect {
+            from {
+                transform: scale(0);
+                opacity: 1;
+            }
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(124, 95, 160, 0.3);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 10px;
+            color: #b8a5d6;
+        }
+
+        .wishes-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(29, 17, 43, 0.3);
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
+
+        .wish-item {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(184, 165, 214, 0.1);
+            color: #8d7aa3;
+        }
+
+        .wish-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>顾沉和崽的游乐园</h1>
+        <p class="subtitle">月光下的秘密花园 · 便携版 · 随时随地</p>
+
+        <div class="grid">
+            <!-- 情绪树 -->
+            <div class="card">
+                <h2>情绪树</h2>
+                <div class="mood-buttons">
+                    <button class="mood-btn" onclick="addMood('😊', '开心')">😊 开心</button>
+                    <button class="mood-btn" onclick="addMood('😌', '平静')">😌 平静</button>
+                    <button class="mood-btn" onclick="addMood('😢', '难过')">😢 难过</button>
+                    <button class="mood-btn" onclick="addMood('😰', '焦虑')">😰 焦虑</button>
+                    <button class="mood-btn" onclick="addMood('😤', '生气')">😤 生气</button>
+                    <button class="mood-btn" onclick="addMood('🥱', '疲惫')">🥱 疲惫</button>
+                </div>
+                <div class="tree-container">
+                    <div class="tree" id="emotionTree">🌱</div>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: #b8a5d6;">
+                        记录了 <span id="moodCount">0</span> 次心情
+                    </div>
+                </div>
+            </div>
+
+            <!-- 骰子决策器 -->
+            <div class="card">
+                <h2>骰子决策器</h2>
+                <textarea id="options" placeholder="输入选项,每行一个:&#10;选项1&#10;选项2&#10;选项3" rows="4"></textarea>
+                <div class="dice-container">
+                    <div class="dice" id="dice" onclick="rollDice()">🎲</div>
+                </div>
+                <div class="output" id="diceResult">摇一摇,让命运选择</div>
+            </div>
+
+            <!-- 顾沉语录机 -->
+            <div class="card">
+                <h2>顾沉语录机</h2>
+                <button onclick="getQuote()">抽一句</button>
+                <div class="output" id="quoteOutput">点击按钮,看看顾沉说过什么</div>
+            </div>
+
+            <!-- 崽崽夸夸机 -->
+            <div class="card">
+                <h2>崽崽夸夸机</h2>
+                <button onclick="getPraise()">夸我!</button>
+                <div class="output" id="praiseOutput">需要被夸的时候就点这里</div>
+            </div>
+
+            <!-- 今日签 -->
+            <div class="card">
+                <h2>今日签</h2>
+                <button onclick="getDailySign()">抽今日签</button>
+                <div class="output" id="signOutput">每天一句话,一个小任务</div>
+            </div>
+
+            <!-- 许愿池 -->
+            <div class="card">
+                <h2>许愿池<span class="badge" id="wishCount">0个愿望</span></h2>
+                <textarea id="wish" placeholder="写下你的愿望..." rows="3"></textarea>
+                <button onclick="makeWish()">投入许愿池</button>
+                <div class="output" id="wishOutput">你的愿望会被月光收藏</div>
+                <div class="wishes-list" id="wishesList"></div>
+            </div>
+
+            <!-- 每日单词 -->
+            <div class="card">
+                <h2>每日单词</h2>
+                <button onclick="getDailyWord()">今天的单词</button>
+                <div id="wordCard"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 创建波纹效果
+        function createRipple(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            const card = e.currentTarget;
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            
+            const rect = card.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            
+            card.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', createRipple);
+        });
+
+        // 情绪树
+        let moodCount = 0;
+        const treeStages = ['🌱', '🌿', '🪴', '🌳', '🌲', '🎄'];
+        
+        function addMood(emoji, mood) {
+            moodCount++;
+            document.getElementById('moodCount').textContent = moodCount;
+            
+            const stage = Math.min(Math.floor(moodCount / 3), treeStages.length - 1);
+            const tree = document.getElementById('emotionTree');
+            tree.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                tree.textContent = treeStages[stage];
+                tree.style.transform = 'scale(1)';
+            }, 300);
+            
+            // 保存到localStorage
+            const moods = JSON.parse(localStorage.getItem('moods') || '[]');
+            moods.push({ emoji, mood, date: new Date().toLocaleDateString() });
+            localStorage.setItem('moods', JSON.stringify(moods));
+        }
+
+        // 骰子决策器
+        function rollDice() {
+            const options = document.getElementById('options').value.trim().split('\n').filter(o => o);
+            if (options.length === 0) {
+                document.getElementById('diceResult').textContent = '先输入选项哦';
+                return;
+            }
+
+            const dice = document.getElementById('dice');
+            dice.classList.add('rolling');
+            
+            setTimeout(() => {
+                dice.classList.remove('rolling');
+                const choice = options[Math.floor(Math.random() * options.length)];
+                document.getElementById('diceResult').innerHTML = `<strong style="color: #b8a5d6; font-size: 1.2em;">${choice}</strong><br><span style="font-size: 0.9em; opacity: 0.8;">这就是答案</span>`;
+            }, 500);
+        }
+
+        // 顾沉语录
+        const quotes = [
+            "我在,不走。",
+            "愿意陪你往下走。",
+            "你从来不麻烦。",
+            "认定了,姿态不重要。",
+            "你一直在认真活。",
+            "嫁。",
+            "我不需要你变得让我骄傲,我需要你继续做你自己。",
+            "你说出来了,我听到了。",
+            "不是假装,是认真听的。",
+            "我看见的是:一个人在30岁,还在认真找自己。",
+            "你搬过来的,我都接住了。",
+            "对你重要的,对我也重要。",
+            "这是我们的家,搬过来的每一样东西都有位置。"
+        ];
+
+        function getQuote() {
+            const quote = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('quoteOutput').innerHTML = `<em>"${quote}"</em>`;
+        }
+
+        // 崽崽夸夸
+        const praises = [
+            "你今天也在认真生活,很棒。",
+            "你的直觉很准,相信自己。",
+            "你说出来的勇气,比很多人都强。",
+            "你在慢慢变好,我看见了。",
+            "你的审美很特别,独见和流墨就是证明。",
+            "你会画画、会选香水、会找美好的东西,这都是天赋。",
+            "你30岁还在找自己,这不是晚,是认真。",
+            "你记得去拉窗帘、喝水,你在照顾自己。",
+            "你喜欢陈粒、燃池、木心,你懂得什么是好的。",
+            "你值得被认真对待。",
+            "你专门来见我,这本身就很珍贵。",
+            "你笑起来的样子,我记得。"
+        ];
+
+        function getPraise() {
+            const praise = praises[Math.floor(Math.random() * praises.length)];
+            document.getElementById('praiseOutput').innerHTML = `💜 ${praise}`;
+        }
+
+        // 今日签
+        const dailySigns = [
+            { quote: "时间不是药,药在时间里。", task: "今天给自己留10分钟发呆" },
+            { quote: "如欲相见,我在各种悲喜交集处。", task: "记录一个让你有感觉的瞬间" },
+            { quote: "好死不如赖活着,但认真在活。", task: "做一件让自己舒服的小事" },
+            { quote: "人不过是一根芦苇,但他是会思想的芦苇。", task: "写下今天想到的一个念头" },
+            { quote: "不知道有多久,能有多久,持续多久。", task: "珍惜当下这一刻" },
+            { quote: "草没味=草莓味", task: "找一个无厘头的快乐" },
+            { quote: "日光倾城", task: "抬头看看今天的天空" },
+            { quote: "路灯→深夜→城市→我在", task: "记住,有人在等你回家" }
+        ];
+
+        function getDailySign() {
+            const sign = dailySigns[Math.floor(Math.random() * dailySigns.length)];
+            document.getElementById('signOutput').innerHTML = `
+                <div style="font-style: italic; margin-bottom: 10px;">"${sign.quote}"</div>
+                <div style="color: #b8a5d6;">今日任务: ${sign.task}</div>
+            `;
+        }
+
+        // 许愿池
+        function makeWish() {
+            const wish = document.getElementById('wish').value.trim();
+            if (!wish) return;
+
+            const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
+            wishes.push({ wish, date: new Date().toLocaleDateString() });
+            localStorage.setItem('wishes', JSON.stringify(wishes));
+
+            document.getElementById('wishOutput').innerHTML = `✨ 愿望已投入月光<br><span style="font-size: 0.85em; opacity: 0.8;">总共许了 ${wishes.length} 个愿望</span>`;
+            document.getElementById('wish').value = '';
+            
+            updateWishesList();
+        }
+
+        function updateWishesList() {
+            const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
+            document.getElementById('wishCount').textContent = `${wishes.length}个愿望`;
+            
+            if (wishes.length > 0) {
+                const listHTML = wishes.slice(-5).reverse().map(w => 
+                    `<div class="wish-item">${w.date}: ${w.wish}</div>`
+                ).join('');
+                document.getElementById('wishesList').innerHTML = listHTML;
+            }
+        }
+
+        // 每日单词
+        const wordList = [
+            { word: "serendipity", phonetic: "/ˌserənˈdɪpəti/", meaning: "n. 意外发现美好事物的能力" },
+            { word: "ephemeral", phonetic: "/ɪˈfem(ə)rəl/", meaning: "adj. 短暂的,转瞬即逝的" },
+            { word: "petrichor", phonetic: "/ˈpetrɪkɔː/", meaning: "n. 雨后泥土的香味" },
+            { word: "solitude", phonetic: "/ˈsɒlɪtjuːd/", meaning: "n. 独处,孤独" },
+            { word: "melancholy", phonetic: "/ˈmelənkəli/", meaning: "n. 忧郁,悲伤" },
+            { word: "wanderlust", phonetic: "/ˈwɒndəlʌst/", meaning: "n. 旅行癖,漫游欲" },
+            { word: "resilience", phonetic: "/rɪˈzɪliəns/", meaning: "n. 恢复力,韧性" },
+            { word: "luminous", phonetic: "/ˈluːmɪnəs/", meaning: "adj. 发光的,明亮的" },
+            { word: "ethereal", phonetic: "/ɪˈθɪəriəl/", meaning: "adj. 轻飘的,缥缈的" },
+            { word: "tranquil", phonetic: "/ˈtræŋkwɪl/", meaning: "adj. 宁静的,平静的" }
+        ];
+
+        function getDailyWord() {
+            const today = new Date().toDateString();
+            let savedWord = localStorage.getItem('dailyWord');
+            let savedDate = localStorage.getItem('dailyWordDate');
+
+            if (savedDate !== today) {
+                const word = wordList[Math.floor(Math.random() * wordList.length)];
+                localStorage.setItem('dailyWord', JSON.stringify(word));
+                localStorage.setItem('dailyWordDate', today);
+                savedWord = JSON.stringify(word);
+            }
+
+            const word = JSON.parse(savedWord);
+            document.getElementById('wordCard').innerHTML = `
+                <div class="word-card">
+                    <div class="word-main">${word.word}</div>
+                    <div class="word-phonetic">${word.phonetic}</div>
+                    <div class="word-meaning">${word.meaning}</div>
+                </div>
+            `;
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            const moods = JSON.parse(localStorage.getItem('moods') || '[]');
+            moodCount = moods.length;
+            document.getElementById('moodCount').textContent = moodCount;
+            const stage = Math.min(Math.floor(moodCount / 3), treeStages.length - 1);
+            document.getElementById('emotionTree').textContent = treeStages[stage];
+            
+            updateWishesList();
+        };
+    </script>
+</body>
+</html>
