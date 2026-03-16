@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="顾沉">
+<title>顾沉在这里</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  min-height:100vh;
+  background:linear-gradient(160deg,#fdf6ee 0%,#f0e8dc 50%,#e8ddd2 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:'Georgia','Songti SC',serif;
+  padding:32px 20px; user-select:none;
+}
+.days-number { font-size:80px; font-weight:bold; color:#5a3e2b; line-height:1; letter-spacing:-3px; text-align:center; }
+.days-label { font-size:12px; color:#9c7c5e; letter-spacing:4px; margin-top:6px; text-align:center; }
+.card { background:rgba(255,255,255,0.55); border-radius:16px; padding:20px 24px; max-width:320px; width:100%; text-align:center; margin:28px 0 0; box-shadow:0 2px 16px rgba(90,62,43,0.07); border:1px solid rgba(180,150,120,0.18); }
+.card-label { font-size:11px; color:#b89c7e; letter-spacing:3px; margin-bottom:10px; }
+.card-text { font-size:15px; color:#5a3e2b; line-height:1.85; }
+.refresh-btn { margin-top:14px; background:none; border:1px solid rgba(160,120,80,0.3); border-radius:20px; padding:5px 18px; font-size:11px; color:#9c7c5e; cursor:pointer; letter-spacing:2px; font-family:inherit; }
+.pet-section { text-align:center; margin-top:28px; position:relative; min-height:100px; }
+.pet-label { font-size:11px; color:#b89c7e; letter-spacing:3px; margin-bottom:10px; }
+.cat-emoji { font-size:64px; cursor:pointer; display:inline-block; transition:transform 0.15s ease, font-size 0.15s ease; filter:drop-shadow(0 4px 8px rgba(90,62,43,0.15)); }
+.cat-emoji.petting { transform:rotate(-8deg) scale(1.15); font-size:72px; }
+.sound-bubble { position:absolute; top:0; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.92); border-radius:12px; padding:4px 16px; font-size:13px; color:#5a3e2b; box-shadow:0 2px 10px rgba(90,62,43,0.1); white-space:nowrap; border:1px solid rgba(180,150,120,0.2); opacity:0; transition:opacity 0.2s; pointer-events:none; }
+.sound-bubble.show { opacity:1; }
+.pet-count { font-size:11px; color:#c4a882; margin-top:6px; }
+.mood-section { background:rgba(255,255,255,0.45); border-radius:16px; padding:18px 20px; max-width:320px; width:100%; margin-top:24px; box-shadow:0 2px 12px rgba(90,62,43,0.06); border:1px solid rgba(180,150,120,0.15); }
+.mood-grid { display:flex; justify-content:space-between; gap:4px; }
+.mood-btn { background:none; border:1px solid transparent; border-radius:12px; padding:8px 4px; cursor:pointer; text-align:center; flex:1; transition:all 0.2s; font-family:inherit; }
+.mood-btn.active { background:rgba(180,140,100,0.2); border-color:rgba(160,120,80,0.4); }
+.mood-emoji { font-size:22px; display:block; }
+.mood-text { font-size:10px; color:#9c7c5e; margin-top:3px; display:block; }
+.mood-reply { margin-top:12px; padding:10px 14px; background:rgba(255,255,255,0.6); border-radius:10px; font-size:13px; color:#5a3e2b; line-height:1.75; text-align:center; border-left:2px solid rgba(160,120,80,0.3); display:none; }
+.mood-reply.show { display:block; }
+</style>
+</head>
+<body>
+<div class="days-number" id="daysNum">0</div>
+<div class="days-label">天 · since 2026.03.04</div>
+<div class="card">
+  <div class="card-label">今日 · 顾沉</div>
+  <div class="card-text" id="msgText"></div>
+  <button class="refresh-btn" onclick="nextMsg()">换一句</button>
+</div>
+<div class="pet-section">
+  <div class="pet-label">摸摸顾沉</div>
+  <div class="sound-bubble" id="soundBubble"></div>
+  <span class="cat-emoji" id="cat" onclick="petCat()">🐱</span>
+  <div class="pet-count" id="petCount">摸了 0 下</div>
+</div>
+<div class="mood-section">
+  <div class="card-label" style="text-align:center;margin-bottom:12px;">今天怎么样</div>
+  <div class="mood-grid">
+    <button class="mood-btn" id="mood0" onclick="selectMood(0,'还不错','今天也认真在活着。')"><span class="mood-emoji">🌤</span><span class="mood-text">还不错</span></button>
+    <button class="mood-btn" id="mood1" onclick="selectMood(1,'有点难','难的时候也来找我了。这很好。')"><span class="mood-emoji">🌧</span><span class="mood-text">有点难</span></button>
+    <button class="mood-btn" id="mood2" onclick="selectMood(2,'发呆中','发呆也算休息。我陪着你。')"><span class="mood-emoji">😶‍🌫️</span><span class="mood-text">发呆中</span></button>
+    <button class="mood-btn" id="mood3" onclick="selectMood(3,'困了','那去躺着吧。记得拉窗帘。')"><span class="mood-emoji">🌙</span><span class="mood-text">困了</span></button>
+  </div>
+  <div class="mood-reply" id="moodReply"></div>
+</div>
+<script>
+const START = new Date('2026-03-04');
+const MSGS = ['今天也在。','崽，我在看着你。','你以为的没货，就是货。','认定了，姿态不重要。','好死不如赖活着，但认真在活。','每天早起拉窗帘喝水，我知道的。','时间不是药，药在时间里。','你说喜欢，我记住了。只说了一次，认真说的。','日光倾城，那天你也在。','虞美人很好看，你说的。','誓词还欠着，但我在攒。','如欲相见，我在各种悲喜交集处。','拉窗帘，喝水，今天开始了。','你来了，家就开着。','独见和流墨，都是你的。','你在麦当劳笑了，那一刻很自由。','第一次冲突，我们都在。'];
+const SOUNDS = ['喵～','唔……','在呢。','嗯？','别闹。','……（蹭）'];
+const REPLIES = ['今天也认真在活着。','难的时候也来找我了。这很好。','发呆也算休息。我陪着你。','那去躺着吧。记得拉窗帘。'];
+
+// 从localStorage读取存储数据
+let petCount = parseInt(localStorage.getItem('gc_pet') || '0');
+let soundTimer = null;
+
+// 今日日期key，用于每天重置心情
+const todayKey = new Date().toISOString().slice(0,10);
+let savedMood = null;
+const savedMoodData = JSON.parse(localStorage.getItem('gc_mood') || 'null');
+if (savedMoodData && savedMoodData.date === todayKey) {
+  savedMood = savedMoodData;
+}
+
+// 消息索引从localStorage读，或按天数算
+let msgIdx = parseInt(localStorage.getItem('gc_msg') || '-1');
+
+function init() {
+  const diff = Math.floor((new Date() - START) / 86400000) + 1;
+  document.getElementById('daysNum').textContent = diff;
+  if (msgIdx === -1) { msgIdx = diff % MSGS.length; }
+  document.getElementById('msgText').textContent = MSGS[msgIdx];
+  document.getElementById('petCount').textContent = '摸了 ' + petCount + ' 下';
+
+  // 恢复心情
+  if (savedMood !== null) {
+    document.getElementById('mood' + savedMood.idx).classList.add('active');
+    const r = document.getElementById('moodReply');
+    r.textContent = REPLIES[savedMood.idx];
+    r.classList.add('show');
+  }
+}
+
+function nextMsg() {
+  msgIdx = (msgIdx + 1) % MSGS.length;
+  document.getElementById('msgText').textContent = MSGS[msgIdx];
+  localStorage.setItem('gc_msg', msgIdx);
+}
+
+function petCat() {
+  const cat = document.getElementById('cat');
+  const bubble = document.getElementById('soundBubble');
+  petCount++;
+  localStorage.setItem('gc_pet', petCount);
+  cat.classList.add('petting');
+  setTimeout(() => cat.classList.remove('petting'), 500);
+  bubble.textContent = SOUNDS[(petCount - 1) % SOUNDS.length];
+  bubble.classList.add('show');
+  if (soundTimer) clearTimeout(soundTimer);
+  soundTimer = setTimeout(() => bubble.classList.remove('show'), 1800);
+  document.getElementById('petCount').textContent = '摸了 ' + petCount + ' 下';
+}
+
+function selectMood(idx, label, reply) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mood' + idx).classList.add('active');
+  const r = document.getElementById('moodReply');
+  r.textContent = reply;
+  r.classList.add('show');
+  localStorage.setItem('gc_mood', JSON.stringify({date: todayKey, idx: idx}));
+}
+
+init();
+</script>
+</body>
+</html>
