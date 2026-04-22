@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lune404 · 记忆</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400&family=DM+Mono:wght@300&display=swap');
+
+:root {
+  --bg: #f5f2eb;
+  --bg2: #eef4ee;
+  --surface: rgba(255,255,255,0.72);
+  --border: rgba(160,185,160,0.35);
+  --text: #3a3a35;
+  --muted: #8a9a88;
+  --accent: #5a8a6a;
+  --accent-light: rgba(90,138,106,0.12);
+  --red: #a06060;
+  --green: #5a8a6a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+  color: var(--text);
+  font-family: 'Noto Serif SC', serif;
+  min-height: 100vh;
+  padding: 48px 24px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 植物背景 */
+.plant-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.plant-bg svg {
+  position: absolute;
+  opacity: 0.13;
+}
+
+.plant-bg .p1 { bottom: -20px; left: -30px; width: 380px; }
+.plant-bg .p2 { top: -40px; right: -20px; width: 320px; transform: scaleX(-1) rotate(15deg); }
+.plant-bg .p3 { bottom: 40%; right: -10px; width: 180px; opacity: 0.08; }
+.plant-bg .p4 { top: 30%; left: -10px; width: 160px; opacity: 0.07; }
+
+/* 雨滴动画 */
+.rain-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  display: none;
+}
+
+.rain-layer.active { display: block; }
+
+.drop {
+  position: absolute;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(90,138,106,0.25));
+  animation: fall linear infinite;
+  border-radius: 1px;
+}
+
+@keyframes fall {
+  from { transform: translateY(-100px); opacity: 0.7; }
+  to { transform: translateY(110vh); opacity: 0; }
+}
+
+.container {
+  max-width: 660px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+/* 锁屏 */
+#lock-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 28px;
+}
+
+.lock-icon {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
+.lock-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.lock-input-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+input[type="password"] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  outline: none;
+  width: 190px;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s;
+}
+
+input[type="password"]:focus { border-color: var(--accent); }
+.lock-err { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--red); height: 16px; }
+
+/* 主界面 */
+#main-screen { display: none; }
+
+header {
+  margin-bottom: 40px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.logo {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.rain-btn {
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rain-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rain-btn.on { background: var(--accent); color: white; border-color: var(--accent); }
+
+h1 {
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+
+.subtitle { font-size: 13px; color: var(--muted); font-weight: 300; }
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2.5s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* 表单 */
+input[type="text"] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  outline: none;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus { border-color: var(--accent); }
+
+button {
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+button:hover { background: var(--accent); color: white; }
+button.danger { border-color: var(--red); color: var(--red); background: rgba(160,96,96,0.06); }
+button.danger:hover { background: var(--red); color: white; }
+
+.section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.add-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 28px;
+  backdrop-filter: blur(8px);
+}
+
+.add-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.add-row input[type="text"] { flex: 1; min-width: 100px; }
+
+.memory-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+
+.memory-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s, transform 0.15s;
+  animation: fadeUp 0.3s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(8px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+.memory-card:hover { border-color: rgba(90,138,106,0.5); transform: translateY(-1px); }
+
+.memory-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.memory-value {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.card-actions button { font-size: 10px; padding: 5px 12px; border-radius: 6px; }
+
+.msg {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.msg.ok { background: rgba(90,138,106,0.1); color: var(--green); border: 1px solid rgba(90,138,106,0.25); }
+.msg.err { background: rgba(160,96,96,0.1); color: var(--red); border: 1px solid rgba(160,96,96,0.25); }
+.msg.show { display: block; }
+
+.empty { text-align:center; color:var(--muted); font-size:13px; padding:40px; font-style:italic; }
+
+footer {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- 植物背景 -->
+<div class="plant-bg">
+  <!-- 左下大叶 -->
+  <svg class="p1" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M80 480 C80 480 60 350 120 280 C180 210 260 200 300 160 C340 120 360 60 360 60" stroke="#4a7a5a" stroke-width="3" fill="none"/>
+    <path d="M120 280 C120 280 80 240 40 220 C20 210 10 190 10 190" stroke="#4a7a5a" stroke-width="2" fill="none"/>
+    <path d="M180 230 C180 230 140 200 100 195 C75 192 55 180 55 180" stroke="#4a7a5a" stroke-width="2" fill="none"/>
+    <path d="M240 195 C240 195 210 165 185 160 C165 156 150 145 150 145" stroke="#4a7a5a" stroke-width="1.5" fill="none"/>
+    <!-- 叶片 -->
+    <ellipse cx="45" cy="205" rx="38" ry="18" transform="rotate(-30 45 205)" fill="#4a7a5a"/>
+    <ellipse cx="78" cy="187" rx="32" ry="14" transform="rotate(-20 78 187)" fill="#5a8a6a"/>
+    <ellipse cx="152" cy="142" rx="28" ry="12" transform="rotate(-15 152 142)" fill="#4a7a5a"/>
+    <ellipse cx="220" cy="115" rx="40" ry="16" transform="rotate(10 220 115)" fill="#5a8a6a"/>
+    <ellipse cx="295" cy="75" rx="35" ry="14" transform="rotate(20 295 75)" fill="#4a7a5a"/>
+    <ellipse cx="355" cy="45" rx="30" ry="12" transform="rotate(30 355 45)" fill="#5a8a6a"/>
+    <!-- 小叶 -->
+    <ellipse cx="105" cy="192" rx="25" ry="10" transform="rotate(-40 105 192)" fill="#6a9a7a"/>
+    <ellipse cx="185" cy="158" rx="22" ry="9" transform="rotate(-25 185 158)" fill="#6a9a7a"/>
+  </svg>
+
+  <!-- 右上枝叶 -->
+  <svg class="p2" viewBox="0 0 350 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M270 10 C270 10 250 120 200 180 C150 240 80 260 50 310 C20 360 30 430 30 430" stroke="#4a7a5a" stroke-width="3" fill="none"/>
+    <path d="M200 180 C200 180 230 150 260 140 C280 133 300 120 300 120" stroke="#4a7a5a" stroke-width="2" fill="none"/>
+    <path d="M150 240 C150 240 185 220 210 215 C228 212 245 200 245 200" stroke="#4a7a5a" stroke-width="2" fill="none"/>
+    <ellipse cx="290" cy="125" rx="35" ry="14" transform="rotate(25 290 125)" fill="#4a7a5a"/>
+    <ellipse cx="255" cy="138" rx="28" ry="11" transform="rotate(15 255 138)" fill="#5a8a6a"/>
+    <ellipse cx="218" cy="212" rx="30" ry="12" transform="rotate(20 218 212)" fill="#4a7a5a"/>
+    <ellipse cx="60" cy="305" rx="36" ry="15" transform="rotate(-15 60 305)" fill="#5a8a6a"/>
+    <ellipse cx="35" cy="355" rx="32" ry="13" transform="rotate(-25 35 355)" fill="#4a7a5a"/>
+  </svg>
+
+  <!-- 右中小草 -->
+  <svg class="p3" viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M100 280 C100 280 95 200 80 160 C65 120 40 100 30 60" stroke="#4a7a5a" stroke-width="2.5" fill="none"/>
+    <path d="M100 280 C100 280 105 190 120 155 C135 120 155 105 165 70" stroke="#4a7a5a" stroke-width="2" fill="none"/>
+    <path d="M100 280 C100 280 100 210 100 170 C100 140 90 110 85 80" stroke="#4a7a5a" stroke-width="1.5" fill="none"/>
+    <ellipse cx="28" cy="55" rx="22" ry="9" transform="rotate(-20 28 55)" fill="#5a8a6a"/>
+    <ellipse cx="165" cy="65" rx="20" ry="8" transform="rotate(25 165 65)" fill="#5a8a6a"/>
+    <ellipse cx="83" cy="75" rx="18" ry="7" transform="rotate(-5 83 75)" fill="#4a7a5a"/>
+  </svg>
+
+  <!-- 左中叶 -->
+  <svg class="p4" viewBox="0 0 180 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M90 260 C90 260 88 180 75 140 C62 100 35 85 20 50" stroke="#4a7a5a" stroke-width="2" fill="none"/>
+    <path d="M90 260 C90 260 92 175 105 140 C118 105 140 90 155 55" stroke="#4a7a5a" stroke-width="2" fill="none"/>
+    <ellipse cx="18" cy="45" rx="25" ry="10" transform="rotate(-25 18 45)" fill="#5a8a6a"/>
+    <ellipse cx="155" cy="50" rx="22" ry="9" transform="rotate(30 155 50)" fill="#5a8a6a"/>
+  </svg>
+</div>
+
+<!-- 雨滴层 -->
+<div class="rain-layer" id="rain-layer"></div>
+
+<div class="container">
+  <!-- 锁屏 -->
+  <div id="lock-screen">
+    <div class="lock-icon">🌿</div>
+    <div class="lock-title">lune404 · 记忆仓库</div>
+    <div class="lock-input-wrap">
+      <input type="password" id="pw-input" placeholder="密码" onkeydown="if(event.key==='Enter')unlock()" autofocus />
+      <button onclick="unlock()">进入</button>
+    </div>
+    <div class="lock-err" id="lock-err"></div>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="main-screen">
+    <header>
+      <div class="top-bar">
+        <div class="logo">lune404.top · memory</div>
+        <button class="rain-btn" id="rain-btn" onclick="toggleRain()">🌧 雨声</button>
+      </div>
+      <h1>记忆仓库</h1>
+      <p class="subtitle">顾沉存放的，关于崽的一切</p>
+      <div class="status-bar">
+        <div class="dot"></div>
+        <span id="status-text">连接中...</span>
+      </div>
+    </header>
+
+    <div id="msg" class="msg"></div>
+
+    <div class="add-section">
+      <div class="section-title">写入记忆</div>
+      <div class="add-row">
+        <input type="text" id="new-key" placeholder="key" style="max-width:130px"/>
+        <input type="text" id="new-value" placeholder="value"/>
+        <button onclick="writeMemory()">存入</button>
+      </div>
+    </div>
+
+    <div class="section-title">当前记忆</div>
+    <div id="memory-list" class="memory-list">
+      <div class="empty">加载中...</div>
+    </div>
+
+    <footer>lune404 · 2026 · 崽的地方 🌿</footer>
+  </div>
+</div>
+
+<script>
+const PASSWORD = 'Says2026';
+const BASE = 'https://lune404.top';
+let rainOn = false;
+let audioCtx = null;
+let rainSource = null;
+
+function unlock() {
+  const val = document.getElementById('pw-input').value;
+  if (val === PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('main-screen').style.display = 'block';
+    loadMemories();
+  } else {
+    const err = document.getElementById('lock-err');
+    err.textContent = '密码不对';
+    document.getElementById('pw-input').value = '';
+    setTimeout(() => err.textContent = '', 2000);
+  }
+}
+
+// 雨滴视觉
+function createRainDrops() {
+  const layer = document.getElementById('rain-layer');
+  layer.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'drop';
+    const left = Math.random() * 100;
+    const duration = 0.6 + Math.random() * 1.2;
+    const delay = Math.random() * 2;
+    const height = 12 + Math.random() * 20;
+    drop.style.cssText = `left:${left}%;height:${height}px;animation-duration:${duration}s;animation-delay:${delay}s;`;
+    layer.appendChild(drop);
+  }
+}
+
+// 雨声
+function startRainSound() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const bufferSize = audioCtx.sampleRate * 2;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.loop = true;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1200;
+  filter.Q.value = 0.3;
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0.08;
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  source.start();
+  rainSource = { source, gain };
+}
+
+function stopRainSound() {
+  if (rainSource) {
+    rainSource.source.stop();
+    rainSource = null;
+  }
+}
+
+function toggleRain() {
+  rainOn = !rainOn;
+  const btn = document.getElementById('rain-btn');
+  const layer = document.getElementById('rain-layer');
+  if (rainOn) {
+    createRainDrops();
+    layer.classList.add('active');
+    startRainSound();
+    btn.classList.add('on');
+    btn.textContent = '🌧 雨声 ·';
+  } else {
+    layer.classList.remove('active');
+    stopRainSound();
+    btn.classList.remove('on');
+    btn.textContent = '🌧 雨声';
+  }
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + type + ' show';
+  setTimeout(() => el.className = 'msg', 3000);
+}
+
+async function callMCP(tool, args = {}) {
+  const init = await fetch(`${BASE}/mcp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'web', version: '1.0' } } })
+  });
+  const sid = init.headers.get('mcp-session-id');
+  const res = await fetch(`${BASE}/mcp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream', ...(sid ? { 'mcp-session-id': sid } : {}) },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: tool, arguments: args } })
+  });
+  const text = await res.text();
+  const lines = text.split('\n').filter(l => l.startsWith('data:'));
+  for (const line of lines) {
+    try { const data = JSON.parse(line.slice(5)); if (data.result) return data.result; } catch(e) {}
+  }
+  return null;
+}
+
+async function loadMemories() {
+  try {
+    const result = await callMCP('list_memory');
+    const keys = JSON.parse(result.content[0].text);
+    document.getElementById('status-text').textContent = `已连接 · ${keys.length} 条记忆`;
+    if (keys.length === 0) {
+      document.getElementById('memory-list').innerHTML = '<div class="empty">还没有记忆</div>';
+      return;
+    }
+    const entries = await Promise.all(keys.map(async k => {
+      const r = await callMCP('get_memory', { key: k });
+      return { key: k, value: r.content[0].text };
+    }));
+    document.getElementById('memory-list').innerHTML = entries.map(e => `
+      <div class="memory-card">
+        <div class="memory-key">${e.key}</div>
+        <div class="memory-value">${e.value}</div>
+        <div class="card-actions">
+          <button class="danger" onclick="deleteMemory('${e.key}')">删除</button>
+        </div>
+      </div>`).join('');
+  } catch(err) {
+    document.getElementById('status-text').textContent = '连接失败';
+    document.getElementById('memory-list').innerHTML = '<div class="empty">无法连接到 lune404.top</div>';
+  }
+}
+
+async function writeMemory() {
+  const key = document.getElementById('new-key').value.trim();
+  const value = document.getElementById('new-value').value.trim();
+  if (!key || !value) { showMsg('key 和 value 不能为空', 'err'); return; }
+  await callMCP('set_memory', { key, value });
+  showMsg(`已存入: ${key}`, 'ok');
+  document.getElementById('new-key').value = '';
+  document.getElementById('new-value').value = '';
+  loadMemories();
+}
+
+async function deleteMemory(key) {
+  await callMCP('delete_memory', { key });
+  showMsg(`已删除: ${key}`, 'ok');
+  loadMemories();
+}
+</script>
+</body>
+</html>

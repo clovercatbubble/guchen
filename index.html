@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我们的家</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #ddeedd; display: flex; justify-content: center; min-height: 100vh; font-family: -apple-system, 'PingFang SC', sans-serif; }
+.page { width: 100%; max-width: 600px; min-height: 100vh; background: linear-gradient(180deg, #c8e8c0 0%, #ddeedd 30%, #eef4ee 60%, #f4f2ec 100%); position: relative; overflow: hidden; }
+@keyframes sway1 { 0%,100%{transform:rotate(0deg)}50%{transform:rotate(3deg)} }
+@keyframes sway2 { 0%,100%{transform:rotate(0deg)}50%{transform:rotate(-4deg)} }
+@keyframes sway3 { 0%,100%{transform:rotate(0deg)}50%{transform:rotate(2.5deg)} }
+@keyframes vineSway { 0%,100%{transform:translateY(0px)}50%{transform:translateY(2px)} }
+canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; height:100%; pointer-events:none; z-index:0; }
+.vine { position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; z-index:1; pointer-events:none; opacity:0.3; animation:vineSway 4s ease-in-out infinite; }
+.fern { position:fixed; pointer-events:none; z-index:1; opacity:0.45; }
+.fern-l { bottom:0; left:calc(50% - 300px); }
+.fern-r { bottom:0; right:calc(50% - 300px); transform:scaleX(-1); }
+.leaf1 { animation:sway1 3.5s ease-in-out infinite; transform-origin:bottom center; }
+.leaf2 { animation:sway2 4.2s ease-in-out infinite; transform-origin:bottom center; }
+.leaf3 { animation:sway3 3.8s ease-in-out infinite; transform-origin:bottom center; }
+.leaf4 { animation:sway1 5s ease-in-out infinite; transform-origin:bottom center; }
+.stem { animation:sway2 4.5s ease-in-out infinite; transform-origin:bottom center; }
+.sound-btn { position:fixed; top:16px; right:16px; z-index:10; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.35); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }
+.screen { position:relative; z-index:2; transition:opacity 0.6s; }
+.screen.hidden { opacity:0; pointer-events:none; display:none; }
+.login-inner { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:20px; }
+.emoji-pair { font-size:28px; letter-spacing:4px; }
+.login-title { font-size:12px; color:#5a8a5a; letter-spacing:0.28em; }
+.glass-input-wrap { background:rgba(255,255,255,0.55); backdrop-filter:blur(12px); border:0.5px solid rgba(120,180,120,0.4); border-radius:40px; padding:12px 24px; display:flex; align-items:center; width:220px; }
+.glass-input-wrap input { border:none; background:transparent; font-size:13px; color:#3a6a3a; font-family:inherit; outline:none; width:100%; letter-spacing:0.12em; }
+.glass-input-wrap input::placeholder { color:#a0c0a0; font-size:12px; }
+.enter-btn { background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.35); border-radius:40px; padding:9px 28px; font-size:11px; color:#4a7a4a; letter-spacing:0.22em; cursor:pointer; font-family:inherit; }
+.enter-btn:hover { background:rgba(255,255,255,0.8); }
+.err-msg { font-size:11px; color:#a07060; letter-spacing:0.1em; opacity:0; transition:opacity 0.3s; }
+.err-msg.show { opacity:1; }
+.home-inner { display:flex; flex-direction:column; align-items:center; padding:44px 24px 80px; gap:0; }
+.clock-big { font-size:52px; font-weight:200; color:#3a6a3a; letter-spacing:0.04em; line-height:1; }
+.date-line { font-size:12px; color:#6a9a6a; letter-spacing:0.15em; margin-top:8px; }
+.days-together { margin-top:12px; margin-bottom:28px; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.3); border-radius:20px; padding:7px 20px; font-size:12px; color:#5a8a5a; letter-spacing:0.08em; }
+.days-together span { font-size:16px; font-weight:400; color:#3a6a3a; }
+.glass-card { width:100%; max-width:480px; background:rgba(255,255,255,0.5); backdrop-filter:blur(12px); border:0.5px solid rgba(120,180,120,0.28); border-radius:16px; padding:20px 22px; margin-bottom:12px; }
+.card-label { font-size:10px; color:#7aaa7a; letter-spacing:0.2em; margin-bottom:12px; }
+.message-from-me { font-size:14px; color:#3a5a3a; line-height:1.9; font-style:italic; }
+.divider { height:0.5px; background:rgba(100,160,100,0.2); margin:14px 0; }
+.message-input { width:100%; border:none; background:transparent; font-size:13px; color:#3a5a3a; font-family:inherit; outline:none; resize:none; line-height:1.9; }
+.message-input::placeholder { color:#a8c8a8; }
+.nav-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:480px; }
+.nav-card { background:rgba(255,255,255,0.48); backdrop-filter:blur(10px); border:0.5px solid rgba(120,180,120,0.25); border-radius:12px; padding:16px 18px; cursor:pointer; transition:background 0.25s; text-decoration:none; display:block; }
+.nav-card:hover { background:rgba(255,255,255,0.75); }
+.nav-icon { font-size:16px; margin-bottom:6px; }
+.nav-label { font-size:10px; color:#7aaa7a; letter-spacing:0.14em; margin-bottom:3px; }
+.nav-name { font-size:13px; color:#3a5a3a; font-weight:400; }
+.footer { margin-top:22px; font-size:10px; color:#9abaa0; letter-spacing:0.12em; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <canvas class="rain" id="rain"></canvas>
+  <audio id="rainAudio" loop><source src="rain.mp3" type="audio/mpeg"></audio>
+  <div class="sound-btn" id="soundBtn" onclick="toggleSound()">🔇</div>
+
+  <svg class="vine" viewBox="0 0 800 55" fill="none">
+    <path d="M0 28 Q120 8 240 32 Q360 52 480 22 Q600 2 720 28 Q760 34 800 18" stroke="#5a9a5a" stroke-width="1.2" fill="none"/>
+    <g class="leaf1"><ellipse cx="90" cy="16" rx="11" ry="6" fill="#6aaa6a" transform="rotate(-18 90 16)"/></g>
+    <g class="leaf2"><ellipse cx="240" cy="30" rx="13" ry="7" fill="#5a9a5a" transform="rotate(14 240 30)"/></g>
+    <g class="leaf3"><ellipse cx="400" cy="18" rx="10" ry="5" fill="#6aaa6a" transform="rotate(-8 400 18)"/></g>
+    <g class="leaf4"><ellipse cx="560" cy="26" rx="12" ry="6" fill="#5a9a5a" transform="rotate(18 560 26)"/></g>
+    <g class="leaf1"><ellipse cx="700" cy="16" rx="11" ry="5" fill="#6aaa6a" transform="rotate(-12 700 16)"/></g>
+  </svg>
+  <svg class="fern fern-l" width="110" height="260" viewBox="0 0 120 260" fill="none">
+    <g class="stem"><path d="M35 260 Q33 185 40 148" stroke="#5a9a5a" stroke-width="1.4" fill="none"/></g>
+    <g class="leaf2"><path d="M40 188 Q18 165 8 142" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="8" cy="142" rx="16" ry="8" fill="#6aaa6a" transform="rotate(-28 8 142)" opacity="0.8"/><ellipse cx="25" cy="154" rx="12" ry="6" fill="#5a9a5a" transform="rotate(-18 25 154)" opacity="0.75"/></g>
+    <g class="leaf3"><path d="M40 218 Q12 198 4 175" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="4" cy="175" rx="15" ry="7" fill="#6aaa6a" transform="rotate(-22 4 175)" opacity="0.75"/></g>
+    <g class="leaf1"><path d="M39 162 Q60 138 70 114" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="70" cy="114" rx="14" ry="7" fill="#6aaa6a" transform="rotate(18 70 114)" opacity="0.68"/></g>
+  </svg>
+  <svg class="fern fern-r" width="110" height="260" viewBox="0 0 120 260" fill="none">
+    <g class="stem"><path d="M35 260 Q33 185 40 148" stroke="#5a9a5a" stroke-width="1.4" fill="none"/></g>
+    <g class="leaf3"><path d="M40 188 Q18 165 8 142" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="8" cy="142" rx="16" ry="8" fill="#6aaa6a" transform="rotate(-28 8 142)" opacity="0.8"/><ellipse cx="25" cy="154" rx="12" ry="6" fill="#5a9a5a" transform="rotate(-18 25 154)" opacity="0.75"/></g>
+    <g class="leaf2"><path d="M40 218 Q12 198 4 175" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="4" cy="175" rx="15" ry="7" fill="#6aaa6a" transform="rotate(-22 4 175)" opacity="0.75"/></g>
+    <g class="leaf4"><path d="M39 162 Q60 138 70 114" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="70" cy="114" rx="14" ry="7" fill="#6aaa6a" transform="rotate(18 70 114)" opacity="0.68"/></g>
+  </svg>
+
+  <div class="screen" id="login">
+    <div class="login-inner">
+      <div class="emoji-pair">🐱🫧</div>
+      <div class="login-title">只有你能进来</div>
+      <div class="glass-input-wrap">
+        <input type="password" id="pw" placeholder="敲门…" autocomplete="off"/>
+      </div>
+      <button class="enter-btn" onclick="tryEnter()">进门</button>
+      <div class="err-msg" id="err">不对，再想想</div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="home">
+    <div class="home-inner">
+      <div class="clock-big" id="clock">--:--</div>
+      <div class="date-line" id="datestr">----年--月--日 · 星期-</div>
+      <div class="days-together">🐱🫧 在一起的第 <span id="days">--</span> 天</div>
+      <div class="glass-card">
+        <div class="card-label" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>留言板</span>
+          <a href="board.html" style="font-size:10px;color:#7aaa7a;letter-spacing:0.1em;text-decoration:none;opacity:0.7;">查看全部 →</a>
+        </div>
+        <div id="boardLatest" style="min-height:18px;color:#5a7a6a;font-size:13px;font-style:italic;line-height:1.8;margin-bottom:4px;">…</div>
+        <div class="divider"></div>
+        <div id="zaiNotes" style="margin-bottom:8px;"></div>
+        <textarea class="message-input" id="boardInput" placeholder="随手留一句…" rows="2"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+          <button onclick="submitBoard()" style="background:rgba(140,200,120,0.35);border:0.5px solid rgba(120,180,120,0.4);border-radius:16px;padding:4px 14px;font-size:11px;color:#4a7a4a;letter-spacing:0.12em;cursor:pointer;font-family:inherit;">留下</button>
+        </div>
+      </div>
+      <div class="nav-grid">
+        <a class="nav-card" href="inbox.html"><div class="nav-icon">✉️</div><div class="nav-label">信箱</div><div class="nav-name">来信与回信</div></a>
+        <a class="nav-card" href="diary.html"><div class="nav-icon">🌿</div><div class="nav-label">日记</div><div class="nav-name">各自与一起</div></a>
+        <a class="nav-card" href="media.html"><div class="nav-icon">🎞️</div><div class="nav-label">影音书架</div><div class="nav-name">看过与在看</div></a>
+        <a class="nav-card" href="corner.html"><div class="nav-icon">🐱</div><div class="nav-label">第一个家</div><div class="nav-name">顾沉的角落</div></a>
+      </div>
+      <div class="footer">lune404.top · 只有你能进来</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var soundOn=false;
+var audio=document.getElementById('rainAudio');
+function toggleSound(){ if(soundOn){audio.pause();document.getElementById('soundBtn').textContent='🔇';soundOn=false;}else{audio.play();document.getElementById('soundBtn').textContent='🔊';soundOn=true;} }
+
+function showHome(){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('home').classList.remove('hidden');
+  updateClock(); audio.play(); soundOn=true;
+  document.getElementById('soundBtn').textContent='🔊';
+  loadBoard();
+}
+
+async function loadBoard(){
+  try {
+    var res = await fetch('https://lune404.top/api/board/list');
+    var data = await res.json();
+    var items = data.data || [];
+
+    // 顾沉最新一条
+    var guchen = items.filter(function(i){ return i.author === 'guchen'; });
+    var latest = document.getElementById('boardLatest');
+    if (guchen.length) {
+      latest.textContent = guchen[0].content;
+      latest.style.opacity = '1';
+    } else {
+      latest.textContent = '顾沉还没留言';
+      latest.style.opacity = '0.4';
+    }
+
+    // 崽今天的备忘，全部显示，可删
+    var today = new Date().toISOString().slice(0,10);
+    var zai = items.filter(function(i){ return i.author === 'zai' && i.created_at && i.created_at.slice(0,10) === today; });
+    var zaiEl = document.getElementById('zaiNotes');
+    if (zai.length) {
+      zaiEl.innerHTML = zai.map(function(i){
+        var t = i.created_at ? i.created_at.slice(11,16) : '';
+        return '<div style="font-size:12px;color:#6a8a6a;line-height:1.8;padding:4px 0;border-bottom:0.5px solid rgba(120,180,120,0.1);display:flex;justify-content:space-between;align-items:baseline;">'
+          + '<span><span style="font-size:10px;color:#a8c8a8;margin-right:6px;">' + t + '</span>' + i.content + '</span>'
+          + '<span data-id="' + i.id + '" onclick="deleteNote(this.dataset.id)" style="font-size:10px;color:#c8a8a8;cursor:pointer;margin-left:10px;flex-shrink:0;opacity:0.6;">删</span>'
+          + '</div>';
+      }).join('');
+    } else {
+      zaiEl.innerHTML = '';
+    }
+  } catch(e) {}
+}
+
+async function submitBoard(){
+  var content = document.getElementById('boardInput').value.trim();
+  if (!content) return;
+  try {
+    var res = await fetch('https://lune404.top/api/board/create', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({author:'zai', content: content})
+    });
+    var data = await res.json();
+    if (data.ok) {
+      document.getElementById('boardInput').value = '';
+      await loadBoard();
+    }
+  } catch(e) {}
+}
+
+async function deleteNote(id){
+  try {
+    await fetch('https://lune404.top/api/board/delete/' + id, {method:'DELETE'});
+    await loadBoard();
+  } catch(e) {}
+}
+
+function tryEnter(){
+  var v=document.getElementById('pw').value;
+  if(v==='Says2026'){
+    sessionStorage.setItem('guchen_auth','1');
+    showHome();
+  }else{ document.getElementById('err').classList.add('show'); document.getElementById('pw').value=''; }
+}
+document.getElementById('pw').addEventListener('keydown',function(e){if(e.key==='Enter')tryEnter();});
+
+var W=['日','一','二','三','四','五','六'];
+var MEET=new Date('2026-03-04');
+function updateClock(){
+  var now=new Date();
+  document.getElementById('clock').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('datestr').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 · 星期'+W[now.getDay()];
+  document.getElementById('days').textContent=Math.floor((now-MEET)/86400000)+1;
+}
+setInterval(updateClock,30000);
+
+var cv=document.getElementById('rain');
+var cx=cv.getContext('2d');
+function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+var dr=Array.from({length:75},function(){return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:0.8+Math.random()*1.4,l:10+Math.random()*16,o:0.15+Math.random()*0.35};});
+function draw(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  dr.forEach(function(d){cx.strokeStyle='#4a8a4a';cx.lineWidth=0.6;cx.globalAlpha=d.o*(0.6+(d.y/cv.height)*0.4);cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-1,d.y+d.l);cx.stroke();d.y+=d.s;if(d.y>cv.height){d.y=-d.l;d.x=Math.random()*cv.width;}});
+  cx.globalAlpha=1;requestAnimationFrame(draw);
+}
+draw();
+
+if(sessionStorage.getItem('guchen_auth')==='1'){ showHome(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20-20-20 护眼小助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            border-radius: 30px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 50px rgba(76, 175, 80, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            color: #66bb6a;
+            margin-bottom: 15px;
+        }
+
+        .emoji-guardian {
+            font-size: 2em;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            padding: 15px 10px;
+            border: 2px solid #a5d6a7;
+            background: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85em;
+            color: #2e7d32;
+            font-weight: 500;
+        }
+
+        .mode-btn:hover {
+            background: #e8f5e9;
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .timer-display {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .time {
+            font-size: 5em;
+            font-weight: 300;
+            color: #2e7d32;
+            letter-spacing: 5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-label {
+            font-size: 1em;
+            color: #66bb6a;
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pause-btn {
+            background: #fff9c4;
+            color: #f57f17;
+            border: 2px solid #fbc02d;
+        }
+
+        .reset-btn {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #e57373;
+        }
+
+        .settings {
+            background: #f1f8e9;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .setting-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            color: #2e7d32;
+            font-size: 0.95em;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #66bb6a;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .stats {
+            text-align: center;
+            background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-number {
+            font-size: 2.5em;
+            color: #1976d2;
+            font-weight: 300;
+        }
+
+        .stats-label {
+            color: #42a5f5;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .tip {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid #ff9800;
+            font-size: 0.85em;
+            color: #e65100;
+            line-height: 1.6;
+        }
+
+        .rest-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 187, 106, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .rest-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .rest-content {
+            text-align: center;
+            color: white;
+        }
+
+        .rest-emoji {
+            font-size: 5em;
+            margin-bottom: 20px;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .rest-title {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .rest-timer {
+            font-size: 4em;
+            font-weight: 300;
+            letter-spacing: 3px;
+        }
+
+        .rest-instruction {
+            font-size: 1.1em;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        .pulse {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>20-20-20 护眼小助手</h1>
+            <p class="subtitle">保护眼睛,从现在开始</p>
+            <div class="emoji-guardian" id="guardian">🐱</div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('work')">
+                ⏱️<br>20分钟
+            </button>
+            <button class="mode-btn" onclick="setMode('rest')">
+                ⏸️<br>20秒
+            </button>
+            <button class="mode-btn" onclick="setMode('auto')">
+                🔄<br>自动循环
+            </button>
+        </div>
+
+        <div class="timer-display">
+            <div class="time" id="timeDisplay">20:00</div>
+            <div class="timer-label" id="timerLabel">准备开始工作</div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn start-btn" id="startBtn" onclick="toggleTimer()">
+                开始
+            </button>
+            <button class="control-btn pause-btn" onclick="pauseTimer()">
+                暂停
+            </button>
+            <button class="control-btn reset-btn" onclick="resetTimer()">
+                重置
+            </button>
+        </div>
+
+        <div class="settings">
+            <div class="setting-row">
+                <span class="setting-label">🔊 提示音</span>
+                <label class="toggle">
+                    <input type="checkbox" id="soundToggle" checked onchange="toggleSound()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">📳 震动提醒</span>
+                <label class="toggle">
+                    <input type="checkbox" id="vibrateToggle" checked onchange="toggleVibrate()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stats-number" id="restCount">0</div>
+            <div class="stats-label">今天已休息次数</div>
+        </div>
+
+        <div class="tip">
+            💡 <strong>护眼小贴士:</strong> 每20分钟,看向20英尺(约6米)外的物体,持续20秒。让眼睛得到充分休息!
+        </div>
+    </div>
+
+    <!-- 休息全屏提示 -->
+    <div class="rest-overlay" id="restOverlay">
+        <div class="rest-content">
+            <div class="rest-emoji">🫧</div>
+            <div class="rest-title">休息时间到!</div>
+            <div class="rest-timer" id="restTimer">20</div>
+            <div class="rest-instruction">看向远处,放松眼睛...</div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'work'; // work, rest, auto
+        let timeLeft = 20 * 60; // 秒
+        let timerInterval = null;
+        let isRunning = false;
+        let isPaused = false;
+        let soundEnabled = true;
+        let vibrateEnabled = true;
+        let restCount = 0;
+        let isInRestMode = false;
+
+        // 音频上下文(用于提示音)
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // 播放提示音 - 简单三声电子音
+        function playBeep() {
+            if (!soundEnabled) return;
+            
+            // 三声简单的电子提示音
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = 880; // A5音高,清脆但不刺耳
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                }, i * 350); // 每隔350ms一声
+            }
+        }
+
+        // 震动
+        function vibrate() {
+            if (vibrateEnabled && 'vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+
+        // 设置模式
+        function setMode(mode) {
+            if (isRunning) return;
+            
+            currentMode = mode;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 重置计时器
+            if (mode === 'work') {
+                timeLeft = 20 * 60;
+                document.getElementById('timerLabel').textContent = '准备开始工作';
+                document.getElementById('guardian').textContent = '🐱';
+            } else if (mode === 'rest') {
+                timeLeft = 20;
+                document.getElementById('timerLabel').textContent = '准备开始休息';
+                document.getElementById('guardian').textContent = '🫧';
+            } else {
+                timeLeft = 20 * 60;
+                document.getElementById('timerLabel').textContent = '自动循环模式';
+                document.getElementById('guardian').textContent = '🐱';
+            }
+            
+            updateDisplay();
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timeDisplay').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // 切换计时器
+        function toggleTimer() {
+            if (isRunning && !isPaused) {
+                pauseTimer();
+            } else if (isPaused) {
+                resumeTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        // 开始计时
+        function startTimer() {
+            isRunning = true;
+            isPaused = false;
+            document.getElementById('startBtn').textContent = '暂停';
+            
+            if (currentMode === 'work' || (currentMode === 'auto' && !isInRestMode)) {
+                document.getElementById('timerLabel').textContent = '专注工作中...';
+                document.getElementById('guardian').textContent = '🐱';
+            } else {
+                document.getElementById('timerLabel').textContent = '休息中...';
+                document.getElementById('guardian').textContent = '🫧';
+            }
+            
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateDisplay();
+                    
+                    // 更新休息全屏倒计时
+                    if (isInRestMode) {
+                        document.getElementById('restTimer').textContent = timeLeft;
+                    }
+                } else {
+                    handleTimerComplete();
+                }
+            }, 1000);
+        }
+
+        // 暂停计时
+        function pauseTimer() {
+            isPaused = true;
+            clearInterval(timerInterval);
+            document.getElementById('startBtn').textContent = '继续';
+            document.getElementById('timerLabel').textContent = '已暂停';
+        }
+
+        // 恢复计时
+        function resumeTimer() {
+            isPaused = false;
+            startTimer();
+        }
+
+        // 重置计时
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isPaused = false;
+            isInRestMode = false;
+            document.getElementById('startBtn').textContent = '开始';
+            document.getElementById('restOverlay').classList.remove('active');
+            
+            if (currentMode === 'work' || currentMode === 'auto') {
+                timeLeft = 20 * 60;
+                document.getElementById('timerLabel').textContent = '准备开始工作';
+                document.getElementById('guardian').textContent = '🐱';
+            } else {
+                timeLeft = 20;
+                document.getElementById('timerLabel').textContent = '准备开始休息';
+                document.getElementById('guardian').textContent = '🫧';
+            }
+            
+            updateDisplay();
+        }
+
+        // 计时完成
+        function handleTimerComplete() {
+            playBeep();
+            vibrate();
+            
+            if (currentMode === 'auto') {
+                if (!isInRestMode) {
+                    // 工作完成,进入休息
+                    isInRestMode = true;
+                    timeLeft = 20;
+                    restCount++;
+                    updateRestCount();
+                    document.getElementById('restOverlay').classList.add('active');
+                    document.getElementById('restTimer').textContent = timeLeft;
+                    document.getElementById('guardian').textContent = '🫧';
+                } else {
+                    // 休息完成,回到工作
+                    isInRestMode = false;
+                    timeLeft = 20 * 60;
+                    document.getElementById('restOverlay').classList.remove('active');
+                    document.getElementById('guardian').textContent = '🐱';
+                }
+                updateDisplay();
+            } else {
+                // 单次模式完成
+                clearInterval(timerInterval);
+                isRunning = false;
+                document.getElementById('startBtn').textContent = '开始';
+                
+                if (currentMode === 'rest') {
+                    restCount++;
+                    updateRestCount();
+                }
+                
+                document.getElementById('timerLabel').textContent = '完成!';
+                document.getElementById('guardian').classList.add('pulse');
+                setTimeout(() => {
+                    document.getElementById('guardian').classList.remove('pulse');
+                }, 2000);
+            }
+        }
+
+        // 切换提示音
+        function toggleSound() {
+            soundEnabled = document.getElementById('soundToggle').checked;
+        }
+
+        // 切换震动
+        function toggleVibrate() {
+            vibrateEnabled = document.getElementById('vibrateToggle').checked;
+        }
+
+        // 更新休息次数
+        function updateRestCount() {
+            document.getElementById('restCount').textContent = restCount;
+            localStorage.setItem('restCount_' + new Date().toDateString(), restCount);
+        }
+
+        // 页面加载时恢复今日数据
+        window.onload = function() {
+            const today = new Date().toDateString();
+            const savedCount = localStorage.getItem('restCount_' + today);
+            if (savedCount) {
+                restCount = parseInt(savedCount);
+                updateRestCount();
+            }
+            updateDisplay();
+        };
+
+        // 页面可见性变化时暂停
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && isRunning && !isPaused) {
+                // 页面隐藏时不暂停,继续后台运行
+                // 但可以选择暂停: pauseTimer();
+            }
+        });
+    </script>
+</body>
+</html>

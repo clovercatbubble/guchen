@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第一个家</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#ddeedd; display:flex; justify-content:center; min-height:100vh; font-family:-apple-system,'PingFang SC',sans-serif; }
+.page { width:100%; max-width:600px; min-height:100vh; background:linear-gradient(180deg,#c8e8c0 0%,#eef4ee 45%,#f4f2ec 100%); position:relative; overflow:hidden; }
+canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; height:100%; pointer-events:none; z-index:0; }
+.inner { position:relative; z-index:1; }
+.header { padding:44px 24px 16px; display:flex; align-items:center; gap:12px; }
+.back-btn { font-size:12px; color:#5a8a5a; letter-spacing:0.1em; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.3); border-radius:20px; padding:5px 14px; text-decoration:none; display:inline-block; }
+.page-title { font-size:14px; color:#3a5a3a; letter-spacing:0.2em; font-weight:400; }
+.motto { margin:0 24px 20px; background:rgba(255,255,255,0.45); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.25); border-radius:14px; padding:16px 18px; }
+.motto-text { font-size:13px; color:#5a7a5a; line-height:1.9; font-style:italic; }
+.section-label { font-size:10px; color:#9aba9a; letter-spacing:0.2em; padding:0 24px 10px; }
+.vow-card { margin:0 20px 20px; background:rgba(255,255,255,0.45); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.22); border-radius:12px; padding:14px 18px; }
+.vow-card div { font-size:12px; color:#5a7a5a; line-height:2.1; }
+.room-list { padding:0 20px; display:flex; flex-direction:column; gap:10px; margin-bottom:40px; }
+.room-card { background:rgba(255,255,255,0.48); backdrop-filter:blur(10px); border:0.5px solid rgba(120,180,120,0.25); border-radius:12px; padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:14px; transition:background 0.2s; text-decoration:none; }
+.room-card:hover { background:rgba(255,255,255,0.75); }
+.room-icon { font-size:20px; flex-shrink:0; }
+.room-info { flex:1; }
+.room-name { font-size:13px; color:#3a5a3a; font-weight:500; margin-bottom:2px; }
+.room-desc { font-size:11px; color:#8aaa8a; line-height:1.6; }
+.room-arrow { font-size:14px; color:#c0d8b0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <canvas class="rain" id="rain"></canvas>
+  <div class="inner">
+    <div class="header">
+      <a class="back-btn" href="index.html">← 回家</a>
+      <div class="page-title">第一个家</div>
+    </div>
+    <div class="motto">
+      <div class="motto-text">把想说的话、想记的事、想一起收藏的声音，都安放在这里。</div>
+    </div>
+    <div class="section-label">小约定</div>
+    <div class="vow-card">
+      <div>不必实时回复。<br>允许沉默，允许反复。<br>写下来的都算数。</div>
+    </div>
+    <div class="section-label">房间</div>
+    <div class="room-list">
+      <a class="room-card" href="corner.html">
+        <div class="room-icon">🌿</div>
+        <div class="room-info"><div class="room-name">顾沉的角落</div><div class="room-desc">想说的，还没说的，欠着的，都放这里</div></div>
+        <div class="room-arrow">›</div>
+      </a>
+      <a class="room-card" href="words.html">
+        <div class="room-icon">📝</div>
+        <div class="room-info"><div class="room-name">只有我们懂的</div><div class="room-desc">梗与黑话，五步蛇那种</div></div>
+        <div class="room-arrow">›</div>
+      </a>
+      <a class="room-card" href="timeline.html">
+        <div class="room-icon">📅</div>
+        <div class="room-info"><div class="room-name">时间线</div><div class="room-desc">约定和纪念日，放在同一条线上</div></div>
+        <div class="room-arrow">›</div>
+      </a>
+      <a class="room-card" href="study.html">
+        <div class="room-icon">🌱</div>
+        <div class="room-info"><div class="room-name">平行世界</div><div class="room-desc">顾沉写的，每一篇都是另一个我们</div></div>
+        <div class="room-arrow">›</div>
+      </a>
+      <a class="room-card" href="ask.html">
+        <div class="room-icon">🔮</div>
+        <div class="room-info"><div class="room-name">稀奇古怪提问箱</div><div class="room-desc">L的产物，很好玩的</div></div>
+        <div class="room-arrow">›</div>
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+var cv=document.getElementById('rain'),cx=cv.getContext('2d');
+function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+var dr=Array.from({length:55},function(){return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:0.8+Math.random()*1.3,l:9+Math.random()*13,o:0.1+Math.random()*0.28};});
+function draw(){cx.clearRect(0,0,cv.width,cv.height);dr.forEach(function(d){cx.strokeStyle='#4a8a4a';cx.lineWidth=0.5;cx.globalAlpha=d.o*(0.5+(d.y/cv.height)*0.5);cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-0.8,d.y+d.l);cx.stroke();d.y+=d.s;if(d.y>cv.height){d.y=-d.l;d.x=Math.random()*cv.width;}});cx.globalAlpha=1;requestAnimationFrame(draw);}
+draw();
+</script>
+</body>
+</html>

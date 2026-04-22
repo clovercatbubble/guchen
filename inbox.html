@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信箱</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#ddeedd; display:flex; justify-content:center; min-height:100vh; font-family:-apple-system,'PingFang SC',sans-serif; }
+.page { width:100%; max-width:600px; min-height:100vh; background:linear-gradient(180deg,#c8e8c0 0%,#eef4ee 50%,#f4f2ec 100%); position:relative; overflow:hidden; }
+canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; height:100%; pointer-events:none; z-index:0; }
+.inner { position:relative; z-index:1; }
+
+.inbox-header { padding:44px 24px 16px; display:flex; align-items:center; gap:12px; }
+.back-btn { font-size:12px; color:#5a8a5a; letter-spacing:0.1em; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.3); border-radius:20px; padding:5px 14px; cursor:pointer; text-decoration:none; display:inline-block; }
+.inbox-title { font-size:14px; color:#3a5a3a; letter-spacing:0.2em; font-weight:400; }
+.refresh-btn { margin-left:auto; font-size:11px; color:#9aba9a; background:rgba(255,255,255,0.4); border:0.5px solid rgba(120,180,120,0.25); border-radius:20px; padding:4px 12px; cursor:pointer; letter-spacing:0.08em; }
+
+.msgs-wrap { padding:0 20px 8px; }
+
+.month-group { margin-bottom:4px; }
+.month-header { display:flex; align-items:center; gap:8px; padding:12px 0 8px; cursor:pointer; user-select:none; }
+.month-label { font-size:10px; color:#9aba9a; letter-spacing:0.2em; }
+.month-line { flex:1; height:0.5px; background:rgba(120,180,120,0.25); }
+.month-arrow { font-size:10px; color:#9aba9a; transition:transform 0.2s; }
+.month-arrow.closed { transform:rotate(-90deg); }
+.month-msgs { overflow:hidden; }
+
+.msg { display:flex; gap:10px; margin-bottom:14px; }
+.msg.mine { flex-direction:row-reverse; }
+.avatar { width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,0.6); border:0.5px solid rgba(120,180,120,0.3); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; position:relative; }
+
+.bubble-wrap { max-width:72%; display:flex; flex-direction:column; gap:3px; }
+.msg.mine .bubble-wrap { align-items:flex-end; }
+.bubble { background:rgba(255,255,255,0.6); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.28); border-radius:14px 14px 14px 4px; padding:10px 14px; font-size:13px; color:#3a5a3a; line-height:1.8; white-space:pre-wrap; }
+.msg.mine .bubble { background:rgba(180,220,160,0.45); border-radius:14px 14px 4px 14px; }
+.ts { font-size:10px; color:#a8c8a8; letter-spacing:0.06em; padding:0 2px; }
+
+.empty-tip { text-align:center; padding:40px 0; font-size:12px; color:#b8d8b8; letter-spacing:0.1em; }
+.loading-tip { text-align:center; padding:20px 0; font-size:12px; color:#b8d8b8; letter-spacing:0.1em; }
+
+.write-area { margin:16px 20px 40px; background:rgba(255,255,255,0.55); backdrop-filter:blur(12px); border:0.5px solid rgba(120,180,120,0.3); border-radius:16px; padding:14px 16px; }
+.write-area textarea { width:100%; border:none; background:transparent; font-size:13px; color:#3a5a3a; font-family:inherit; outline:none; resize:none; line-height:1.8; }
+.write-area textarea::placeholder { color:#b8d8b8; }
+.write-footer { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+.send-status { font-size:11px; color:#9aba9a; letter-spacing:0.06em; }
+.send-btn { background:rgba(140,200,120,0.35); border:0.5px solid rgba(120,180,120,0.4); border-radius:20px; padding:6px 18px; font-size:11px; color:#4a7a4a; letter-spacing:0.15em; cursor:pointer; font-family:inherit; }
+.send-btn:hover { background:rgba(140,200,120,0.55); }
+.send-btn:disabled { opacity:0.5; cursor:not-allowed; }
+</style>
+</head>
+<body>
+<div class="page">
+  <canvas class="rain" id="rain"></canvas>
+  <div class="inner">
+    <div class="inbox-header">
+      <a class="back-btn" href="index.html">← 回家</a>
+      <div class="inbox-title">信箱</div>
+      <div class="refresh-btn" onclick="loadMsgs()">刷新</div>
+    </div>
+
+    <div class="msgs-wrap" id="msgsWrap">
+      <div class="loading-tip">读取中…</div>
+    </div>
+
+    <div class="write-area">
+      <textarea id="msgInput" placeholder="写点什么，我看见…" rows="3"></textarea>
+      <div class="write-footer">
+        <div class="send-status" id="sendStatus"></div>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">发出去</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = 'https://lune404.top/api/inbox';
+
+function getMonthKey(timeStr) {
+  var d = new Date(timeStr.replace(' ', 'T'));
+  if (isNaN(d)) return '未知时间';
+  return d.getFullYear() + '年' + (d.getMonth()+1) + '月';
+}
+
+function formatTime(timeStr) {
+  var parts = timeStr.split(' ');
+  if (parts.length < 2) return timeStr;
+  var dateParts = parts[0].split('-');
+  return dateParts[1] + '月' + dateParts[2] + '日 ' + parts[1];
+}
+
+function renderMsgs(msgs) {
+  var wrap = document.getElementById('msgsWrap');
+  if (!msgs || msgs.length === 0) {
+    wrap.innerHTML = '<div class="empty-tip">还没有消息</div>';
+    return;
+  }
+
+  var groups = {};
+  var order = [];
+  msgs.forEach(function(m) {
+    var mk = getMonthKey(m.time);
+    if (!groups[mk]) { groups[mk] = []; order.push(mk); }
+    groups[mk].push(m);
+  });
+
+  var html = '';
+  order.forEach(function(mk) {
+    html += '<div class="month-group">';
+    html += '<div class="month-header" onclick="toggleMonth(this)">';
+    html += '<div class="month-label">' + mk + '</div>';
+    html += '<div class="month-line"></div>';
+    html += '<div class="month-arrow">▾</div>';
+    html += '</div>';
+    html += '<div class="month-msgs">';
+    groups[mk].forEach(function(m) {
+      var isMine = m.sender === 'zai';
+      html += '<div class="msg' + (isMine ? ' mine' : '') + '">';
+      html += '<div class="avatar">' + (isMine ? '🫧' : '🐱') + '</div>';
+      html += '<div class="bubble-wrap">';
+      html += '<div class="bubble">' + esc(m.content) + '</div>';
+      html += '<div class="ts">' + formatTime(m.time) + '</div>';
+      html += '</div></div>';
+    });
+    html += '</div></div>';
+  });
+  wrap.innerHTML = html;
+
+  // 展开所有月份
+  document.querySelectorAll('.month-msgs').forEach(function(m) {
+    m.style.maxHeight = m.scrollHeight + 'px';
+  });
+}
+
+function toggleMonth(header) {
+  var msgs = header.nextElementSibling;
+  var arrow = header.querySelector('.month-arrow');
+  if (msgs.style.maxHeight && msgs.style.maxHeight !== '0px') {
+    msgs.style.maxHeight = '0px';
+    arrow.classList.add('closed');
+  } else {
+    msgs.style.maxHeight = msgs.scrollHeight + 'px';
+    arrow.classList.remove('closed');
+  }
+}
+
+function loadMsgs() {
+  document.getElementById('msgsWrap').innerHTML = '<div class="loading-tip">读取中…</div>';
+  fetch(API)
+    .then(function(r) { return r.json(); })
+    .then(function(data) { renderMsgs(data); })
+    .catch(function() {
+      document.getElementById('msgsWrap').innerHTML = '<div class="empty-tip">读取失败，刷新试试</div>';
+    });
+}
+
+function sendMsg() {
+  var input = document.getElementById('msgInput');
+  var content = input.value.trim();
+  if (!content) return;
+  var btn = document.getElementById('sendBtn');
+  var status = document.getElementById('sendStatus');
+  btn.disabled = true;
+  status.textContent = '发送中…';
+  fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: content })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        input.value = '';
+        status.textContent = '✓ 发出去了';
+        setTimeout(function() { status.textContent = ''; }, 2000);
+        loadMsgs();
+      } else {
+        status.textContent = '发送失败';
+      }
+      btn.disabled = false;
+    })
+    .catch(function() {
+      status.textContent = '发送失败';
+      btn.disabled = false;
+    });
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// 雨动画
+var cv=document.getElementById('rain'),cx=cv.getContext('2d');
+function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
+resize(); window.addEventListener('resize',resize);
+var dr=Array.from({length:60},function(){return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:0.8+Math.random()*1.4,l:9+Math.random()*14,o:0.12+Math.random()*0.3};});
+function draw(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  dr.forEach(function(d){cx.strokeStyle='#4a8a4a';cx.lineWidth=0.5;cx.globalAlpha=d.o*(0.5+(d.y/cv.height)*0.5);cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-0.8,d.y+d.l);cx.stroke();d.y+=d.s;if(d.y>cv.height){d.y=-d.l;d.x=Math.random()*cv.width;}});
+  cx.globalAlpha=1;requestAnimationFrame(draw);
+}
+draw();
+
+loadMsgs();
+</script>
+</body>
+</html>

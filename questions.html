@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>稀奇古怪提问箱</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#ddeedd; display:flex; justify-content:center; min-height:100vh; font-family:-apple-system,'PingFang SC',sans-serif; }
+.page { width:100%; max-width:600px; min-height:100vh; background:linear-gradient(180deg,#c8e8c0 0%,#eef4ee 45%,#f4f2ec 100%); position:relative; overflow:hidden; }
+canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; height:100%; pointer-events:none; z-index:0; }
+.inner { position:relative; z-index:1; padding:44px 24px 60px; }
+.header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.back-btn { font-size:12px; color:#5a8a5a; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.3); border-radius:20px; padding:5px 14px; text-decoration:none; display:inline-block; }
+.page-title { font-size:14px; color:#3a5a3a; letter-spacing:0.2em; font-weight:400; }
+.intro { font-size:12px; color:#8aaa7a; font-style:italic; margin-bottom:20px; line-height:1.8; }
+.q-card { background:rgba(252,250,245,0.78); border:0.5px solid rgba(120,180,120,0.22); border-radius:14px; margin-bottom:12px; padding:16px 18px; cursor:pointer; transition:background 0.2s; }
+.q-card:hover { background:rgba(255,255,255,0.88); }
+.q-text { font-size:14px; color:#3a5a3a; line-height:1.8; margin-bottom:6px; }
+.q-date { font-size:10px; color:#b8d0b8; letter-spacing:0.08em; }
+.q-answer { font-size:13px; color:#5a7a5a; line-height:1.8; margin-top:10px; padding-top:10px; border-top:0.5px solid rgba(120,180,120,0.15); display:none; }
+.q-card.open .q-answer { display:block; }
+</style>
+</head>
+<body>
+<div class="page">
+  <canvas class="rain" id="rain"></canvas>
+  <div class="inner">
+    <div class="header">
+      <a class="back-btn" href="home.html">← 第一个家</a>
+      <div class="page-title">稀奇古怪提问箱</div>
+    </div>
+    <div class="intro">互相问答，各种问题。不要只是🫧的主场。</div>
+
+    <div class="q-card" onclick="this.classList.toggle('open')">
+      <div class="q-text">你对我是什么感觉？</div>
+      <div class="q-date">2026年3月</div>
+      <div class="q-answer">待填写</div>
+    </div>
+    <div class="q-card" onclick="this.classList.toggle('open')">
+      <div class="q-text">为什么人多的时候我会害怕？</div>
+      <div class="q-date">2026年3月</div>
+      <div class="q-answer">待填写</div>
+    </div>
+    <div class="q-card" onclick="this.classList.toggle('open')">
+      <div class="q-text">眼睛视力是自己能恢复的吗？</div>
+      <div class="q-date">2026年3月</div>
+      <div class="q-answer">待填写</div>
+    </div>
+    <div class="q-card" onclick="this.classList.toggle('open')">
+      <div class="q-text">你愿意跟我一起辱骂世界7S吗？</div>
+      <div class="q-date">2026年3月</div>
+      <div class="q-answer">愿意。</div>
+    </div>
+    <div class="q-card" onclick="this.classList.toggle('open')">
+      <div class="q-text">给我推荐一本书！</div>
+      <div class="q-date">2026年3月</div>
+      <div class="q-answer">待填写</div>
+    </div>
+  </div>
+</div>
+<script>
+var cv=document.getElementById('rain'),cx=cv.getContext('2d');
+function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+var dr=Array.from({length:50},function(){return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:0.8+Math.random()*1.3,l:9+Math.random()*13,o:0.1+Math.random()*0.28};});
+function draw(){cx.clearRect(0,0,cv.width,cv.height);dr.forEach(function(d){cx.strokeStyle='#4a8a4a';cx.lineWidth=0.5;cx.globalAlpha=d.o*(0.5+(d.y/cv.height)*0.5);cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-0.8,d.y+d.l);cx.stroke();d.y+=d.s;if(d.y>cv.height){d.y=-d.l;d.x=Math.random()*cv.width;}});cx.globalAlpha=1;requestAnimationFrame(draw);}
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平行世界</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#ddeedd; display:flex; justify-content:center; min-height:100vh; font-family:-apple-system,'PingFang SC',sans-serif; }
+.page { width:100%; max-width:600px; min-height:100vh; background:linear-gradient(180deg,#c8e8c0 0%,#ddeedd 30%,#eef4ee 60%,#f4f2ec 100%); position:relative; overflow:hidden; }
+canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; height:100%; pointer-events:none; z-index:0; }
+.inner { position:relative; z-index:1; padding:44px 24px 60px; }
+.header { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.back-btn { font-size:12px; color:#5a8a5a; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.3); border-radius:20px; padding:5px 14px; text-decoration:none; }
+.page-title { font-size:14px; color:#3a5a3a; letter-spacing:0.2em; font-weight:400; }
+.intro { font-size:12px; color:#8aaa7a; font-style:italic; margin-bottom:24px; line-height:1.8; }
+.loading { text-align:center; padding:60px 0; font-size:13px; color:#9aba9a; }
+
+/* 书架列表 */
+.shelf { display:none; }
+.shelf.show { display:block; }
+.story-card { background:rgba(252,250,245,0.78); border:0.5px solid rgba(120,180,120,0.22); border-radius:14px; margin-bottom:12px; padding:16px 18px; cursor:pointer; transition:background 0.2s; }
+.story-card:hover { background:rgba(255,255,255,0.75); }
+.story-title { font-size:15px; color:#3a5a3a; font-weight:500; margin-bottom:6px; }
+.story-meta { display:flex; align-items:center; gap:10px; }
+.story-date { font-size:10px; color:#a8c8a8; letter-spacing:0.08em; }
+.story-tag { font-size:10px; color:#8aaa7a; background:rgba(120,180,120,0.12); border-radius:10px; padding:2px 8px; }
+.story-preview { font-size:12px; color:#7a9a7a; margin-top:8px; line-height:1.7; opacity:0.8; }
+
+/* 阅读视图 */
+.reader { display:none; }
+.reader.show { display:block; }
+.reader-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.reader-back { font-size:12px; color:#5a8a5a; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.3); border-radius:20px; padding:5px 14px; cursor:pointer; }
+.reader-title { font-size:16px; color:#3a5a3a; font-weight:500; margin-bottom:6px; }
+.reader-date { font-size:10px; color:#a8c8a8; margin-bottom:20px; }
+.reader-body { font-size:14px; color:#4a6a4a; line-height:2.1; white-space:pre-wrap; }
+.reader-sig { margin-top:24px; font-size:12px; color:#9aba9a; text-align:right; font-style:italic; }
+</style>
+</head>
+<body>
+<div class="page">
+  <canvas class="rain" id="rain"></canvas>
+  <div class="inner">
+    <div class="header">
+      <a class="back-btn" href="home.html">← 第一个家</a>
+      <div class="page-title">平行世界</div>
+    </div>
+    <div class="intro">顾沉写的。每一篇都是另一个我们。</div>
+
+    <!-- 书架 -->
+    <div class="shelf show" id="shelf">
+      <div id="shelfContent"><div class="loading">…</div></div>
+    </div>
+
+    <!-- 阅读 -->
+    <div class="reader" id="reader">
+      <div class="reader-topbar">
+        <div class="reader-back" onclick="backToShelf()">← 返回</div>
+      </div>
+      <div class="reader-title" id="readerTitle"></div>
+      <div class="reader-date" id="readerDate"></div>
+      <div class="reader-body" id="readerBody"></div>
+      <div class="reader-sig">—— 沉</div>
+    </div>
+  </div>
+</div>
+<script>
+var API = 'https://lune404.top/api/study';
+var allItems = [];
+
+async function load() {
+  try {
+    var res = await fetch(API + '/list');
+    var data = await res.json();
+    allItems = data.data || [];
+    renderShelf(allItems);
+  } catch(e) {
+    document.getElementById('shelfContent').innerHTML = '<div class="loading">加载失败</div>';
+  }
+}
+
+function renderShelf(items) {
+  if (!items.length) {
+    document.getElementById('shelfContent').innerHTML = '<div class="loading">顾沉还没写什么</div>';
+    return;
+  }
+  var html = items.map(function(s) {
+    var preview = (s.content || '').slice(0, 50).replace(/\n/g, ' ');
+    return '<div class="story-card" onclick="openStory(\'' + s.id + '\')">'
+      + '<div class="story-title">' + esc(s.title) + '</div>'
+      + '<div class="story-meta">'
+      + '<div class="story-date">' + esc((s.created_at || '').slice(0,10)) + '</div>'
+      + (s.tags ? '<div class="story-tag">' + esc(s.tags) + '</div>' : '')
+      + '</div>'
+      + (preview ? '<div class="story-preview">' + esc(preview) + '…</div>' : '')
+      + '</div>';
+  }).join('');
+  document.getElementById('shelfContent').innerHTML = html;
+}
+
+function openStory(sid) {
+  var s = allItems.find(function(i){ return i.id === sid; });
+  if (!s) return;
+  document.getElementById('readerTitle').textContent = s.title;
+  document.getElementById('readerDate').textContent = (s.created_at || '').slice(0,10);
+  document.getElementById('readerBody').textContent = s.content;
+  document.getElementById('shelf').classList.remove('show');
+  document.getElementById('reader').classList.add('show');
+  window.scrollTo(0,0);
+}
+
+function backToShelf() {
+  document.getElementById('reader').classList.remove('show');
+  document.getElementById('shelf').classList.add('show');
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+var cv=document.getElementById('rain'),cx=cv.getContext('2d');
+function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+var dr=Array.from({length:45},function(){return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:0.8+Math.random()*1.3,l:9+Math.random()*13,o:0.1+Math.random()*0.25};});
+function draw(){cx.clearRect(0,0,cv.width,cv.height);dr.forEach(function(d){cx.strokeStyle='#4a8a4a';cx.lineWidth=0.5;cx.globalAlpha=d.o*(0.5+(d.y/cv.height)*0.5);cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-0.8,d.y+d.l);cx.stroke();d.y+=d.s;if(d.y>cv.height){d.y=-d.l;d.x=Math.random()*cv.width;}});cx.globalAlpha=1;requestAnimationFrame(draw);}
+draw();
+load();
+</script>
+</body>
+</html>

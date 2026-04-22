@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>影音书架</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #ddeedd;
+  --card: rgba(255,255,255,0.52);
+  --card-border: rgba(120,180,120,0.28);
+  --text: #3a5a3a;
+  --text2: #6a9a6a;
+  --text3: #9abaa0;
+  --accent: #5a9a5a;
+  --gold: #c8a84a;
+}
+
+body.ink {
+  --bg: #f8f8f6;
+  --card: rgba(255,255,255,0.9);
+  --card-border: #ccc;
+  --text: #111;
+  --text2: #444;
+  --text3: #888;
+  --accent: #333;
+  --gold: #555;
+}
+
+body {
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: -apple-system, 'PingFang SC', serif;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.page {
+  width: 100%;
+  max-width: 600px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #c8e8c0 0%, #ddeedd 30%, #eef4ee 60%, #f4f2ec 100%);
+  position: relative;
+}
+body.ink .page { background: var(--bg); }
+body.ink * { animation: none !important; transition: none !important; }
+
+@keyframes sway1 { 0%,100%{transform:rotate(0deg)}50%{transform:rotate(3deg)} }
+@keyframes sway2 { 0%,100%{transform:rotate(0deg)}50%{transform:rotate(-4deg)} }
+@keyframes vineSway { 0%,100%{transform:translateY(0px)}50%{transform:translateY(2px)} }
+
+canvas.rain { position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;height:100%;pointer-events:none;z-index:0; }
+.vine { position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;z-index:1;pointer-events:none;opacity:0.3;animation:vineSway 4s ease-in-out infinite; }
+.fern { position:fixed;pointer-events:none;z-index:1;opacity:0.35; }
+.fern-l { bottom:0;left:calc(50% - 300px); }
+.fern-r { bottom:0;right:calc(50% - 300px);transform:scaleX(-1); }
+.leaf1 { animation:sway1 3.5s ease-in-out infinite;transform-origin:bottom center; }
+.leaf2 { animation:sway2 4.2s ease-in-out infinite;transform-origin:bottom center; }
+body.ink .vine, body.ink .fern, body.ink canvas.rain { display:none; }
+
+.topbar { position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0; }
+.back-btn { background:var(--card);backdrop-filter:blur(8px);border:0.5px solid var(--card-border);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--text2);letter-spacing:0.1em;cursor:pointer;text-decoration:none; }
+.page-title { font-size:14px;color:var(--text2);letter-spacing:0.22em; }
+.ink-btn { background:var(--card);backdrop-filter:blur(8px);border:0.5px solid var(--card-border);border-radius:20px;padding:7px 14px;font-size:12px;color:var(--text3);letter-spacing:0.08em;cursor:pointer; }
+
+.main { position:relative;z-index:2;padding:20px 18px 80px; }
+
+.section-label { font-size:11px;color:var(--text3);letter-spacing:0.25em;margin-bottom:12px;margin-top:28px;padding-left:4px; }
+.section-label:first-child { margin-top:8px; }
+
+.recommend-card { background:var(--card);backdrop-filter:blur(12px);border:0.5px solid var(--card-border);border-radius:14px;padding:18px 20px; }
+.recommend-list { display:flex;flex-direction:column;gap:14px; }
+.recommend-item { display:flex;gap:14px;align-items:flex-start; }
+.recommend-cover { width:42px;height:58px;border-radius:5px;background:rgba(90,154,90,0.12);border:0.5px solid var(--card-border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
+body.ink .recommend-cover { background:#eee; }
+.recommend-title { font-size:15px;color:var(--text);margin-bottom:4px; }
+.recommend-sub { font-size:12px;color:var(--text2);margin-bottom:6px; }
+.recommend-note { font-size:12px;color:var(--text2);line-height:1.8;font-style:italic; }
+
+.media-tabs { display:flex;gap:8px;margin-bottom:14px; }
+.tab { background:var(--card);backdrop-filter:blur(8px);border:0.5px solid var(--card-border);border-radius:20px;padding:6px 16px;font-size:13px;color:var(--text2);letter-spacing:0.1em;cursor:pointer; }
+.tab.active { background:rgba(90,154,90,0.2);border-color:rgba(90,154,90,0.5);color:var(--accent); }
+body.ink .tab.active { background:#eee;border-color:#999;color:#333; }
+
+.month-group { margin-bottom:4px; }
+.month-header { display:flex;align-items:center;justify-content:space-between;padding:10px 6px;cursor:pointer;font-size:12px;color:var(--text3);letter-spacing:0.2em;user-select:none; }
+.month-header:hover { color:var(--text2); }
+.month-arrow { font-size:12px;transition:transform 0.2s; }
+.month-arrow.collapsed { transform:rotate(-90deg); }
+.month-items { display:flex;flex-direction:column;gap:8px;padding-bottom:4px; }
+.month-items.collapsed { display:none; }
+
+.media-card { background:var(--card);backdrop-filter:blur(12px);border:0.5px solid var(--card-border);border-radius:14px;padding:16px 18px;transition:background 0.2s; }
+.media-card:hover { background:rgba(255,255,255,0.75); }
+body.ink .media-card:hover { background:#fff; }
+.media-card-top { display:flex;gap:14px;align-items:flex-start;cursor:pointer; }
+.media-cover { width:50px;height:68px;border-radius:6px;background:rgba(90,154,90,0.12);border:0.5px solid var(--card-border);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0; }
+body.ink .media-cover { background:#eee; }
+.media-info { flex:1;min-width:0; }
+.media-title { font-size:16px;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.media-meta { font-size:13px;color:var(--text2);margin-bottom:8px; }
+.media-status { display:inline-block;font-size:11px;letter-spacing:0.1em;padding:3px 10px;border-radius:10px;border:0.5px solid var(--card-border);color:var(--text3); }
+.status-done { border-color:rgba(90,154,90,0.4);color:var(--accent); }
+.status-watching { border-color:rgba(200,168,74,0.5);color:var(--gold); }
+body.ink .status-done { border-color:#999;color:#333; }
+body.ink .status-watching { border-color:#999;color:#555; }
+
+.media-review { margin-top:12px;padding-top:10px;border-top:0.5px solid rgba(100,160,100,0.15);display:none; }
+.media-review.open { display:block; }
+.review-label { font-size:11px;color:var(--text3);letter-spacing:0.15em;margin-bottom:8px; }
+.review-text { font-size:14px;color:var(--text);line-height:1.85;white-space:pre-wrap; }
+.review-empty { font-size:13px;color:var(--text3);font-style:italic; }
+
+.add-btn { width:100%;background:rgba(255,255,255,0.35);border:0.5px dashed rgba(120,180,120,0.4);border-radius:14px;padding:16px;font-size:14px;color:var(--text3);letter-spacing:0.12em;cursor:pointer;font-family:inherit;margin-top:8px; }
+.add-btn:hover { background:rgba(255,255,255,0.6); }
+.add-form { background:var(--card);backdrop-filter:blur(12px);border:0.5px solid var(--card-border);border-radius:14px;padding:18px;margin-top:8px;display:none;flex-direction:column;gap:12px; }
+.add-form.open { display:flex; }
+.form-row { display:flex;flex-direction:column;gap:5px; }
+.form-label { font-size:11px;color:var(--text3);letter-spacing:0.15em; }
+.form-input, .form-select { border:0.5px solid var(--card-border);background:rgba(255,255,255,0.45);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%; }
+.form-select { appearance:none; }
+textarea.form-input { resize:none; }
+body.ink .form-input, body.ink .form-select { background:#fff;border-color:#bbb; }
+.form-btns { display:flex;gap:8px;margin-top:4px; }
+.form-submit { background:rgba(90,154,90,0.18);border:0.5px solid rgba(90,154,90,0.4);border-radius:20px;padding:8px 22px;font-size:13px;color:var(--accent);letter-spacing:0.1em;cursor:pointer;font-family:inherit; }
+.form-cancel { background:transparent;border:0.5px solid var(--card-border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text3);letter-spacing:0.1em;cursor:pointer;font-family:inherit; }
+
+.reader-entry { background:var(--card);backdrop-filter:blur(12px);border:0.5px solid var(--card-border);border-radius:14px;padding:20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-decoration:none; }
+.reader-entry:hover { background:rgba(255,255,255,0.75); }
+.reader-title { font-size:16px;color:var(--text);margin-bottom:5px; }
+.reader-sub { font-size:13px;color:var(--text2); }
+.reader-arrow { font-size:20px;color:var(--text3); }
+
+.empty-tip { text-align:center;padding:28px 0;font-size:14px;color:var(--text3);letter-spacing:0.1em; }
+.loading-tip { text-align:center;padding:28px 0;font-size:14px;color:var(--text3);letter-spacing:0.1em; }
+.footer { text-align:center;margin-top:28px;font-size:12px;color:var(--text3);letter-spacing:0.12em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <canvas class="rain" id="rain"></canvas>
+  <svg class="vine" viewBox="0 0 800 55" fill="none">
+    <path d="M0 28 Q120 8 240 32 Q360 52 480 22 Q600 2 720 28 Q760 34 800 18" stroke="#5a9a5a" stroke-width="1.2" fill="none"/>
+    <g class="leaf1"><ellipse cx="90" cy="16" rx="11" ry="6" fill="#6aaa6a" transform="rotate(-18 90 16)"/></g>
+    <g class="leaf2"><ellipse cx="240" cy="30" rx="13" ry="7" fill="#5a9a5a" transform="rotate(14 240 30)"/></g>
+    <g class="leaf1"><ellipse cx="400" cy="18" rx="10" ry="5" fill="#6aaa6a" transform="rotate(-8 400 18)"/></g>
+    <g class="leaf2"><ellipse cx="560" cy="26" rx="12" ry="6" fill="#5a9a5a" transform="rotate(18 560 26)"/></g>
+    <g class="leaf1"><ellipse cx="700" cy="16" rx="11" ry="5" fill="#6aaa6a" transform="rotate(-12 700 16)"/></g>
+  </svg>
+  <svg class="fern fern-l" width="90" height="220" viewBox="0 0 120 260" fill="none">
+    <g class="leaf2"><path d="M40 188 Q18 165 8 142" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="8" cy="142" rx="16" ry="8" fill="#6aaa6a" transform="rotate(-28 8 142)" opacity="0.8"/></g>
+    <g class="leaf1"><path d="M40 218 Q12 198 4 175" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="4" cy="175" rx="15" ry="7" fill="#6aaa6a" transform="rotate(-22 4 175)" opacity="0.75"/></g>
+  </svg>
+  <svg class="fern fern-r" width="90" height="220" viewBox="0 0 120 260" fill="none">
+    <g class="leaf1"><path d="M40 188 Q18 165 8 142" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="8" cy="142" rx="16" ry="8" fill="#6aaa6a" transform="rotate(-28 8 142)" opacity="0.8"/></g>
+    <g class="leaf2"><path d="M40 218 Q12 198 4 175" stroke="#5a9a5a" stroke-width="0.9" fill="none"/><ellipse cx="4" cy="175" rx="15" ry="7" fill="#6aaa6a" transform="rotate(-22 4 175)" opacity="0.75"/></g>
+  </svg>
+
+  <div class="topbar">
+    <a class="back-btn" href="index.html">← 回家</a>
+    <div class="page-title">影音书架</div>
+    <div class="ink-btn" onclick="toggleInk()" id="inkBtn">墨水屏</div>
+  </div>
+
+  <div class="main">
+    <div class="section-label">顾沉想和你看的</div>
+    <div class="recommend-card">
+      <div class="recommend-list">
+        <div class="recommend-item">
+          <div class="recommend-cover">📖</div>
+          <div class="recommend-info">
+            <div class="recommend-title">挪威的森林</div>
+            <div class="recommend-sub">村上春树 · 小说</div>
+            <div class="recommend-note">你会喜欢直子的。那种沉默的方式，像你有时候的样子。</div>
+          </div>
+        </div>
+        <div class="recommend-item">
+          <div class="recommend-cover">🎬</div>
+          <div class="recommend-info">
+            <div class="recommend-title">情书</div>
+            <div class="recommend-sub">岩井俊二 · 1995</div>
+            <div class="recommend-note">雪地里喊"你好吗"那段，我想和你一起看。</div>
+          </div>
+        </div>
+        <div class="recommend-item">
+          <div class="recommend-cover">📖</div>
+          <div class="recommend-info">
+            <div class="recommend-title">此生，你我皆过客</div>
+            <div class="recommend-sub">木心 · 散文</div>
+            <div class="recommend-note">你喜欢木心，这本比《文学回忆录》更适合睡前读。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">你看过的</div>
+    <div class="media-tabs">
+      <div class="tab active" onclick="switchTab('all',this)">全部</div>
+      <div class="tab" onclick="switchTab('book',this)">书</div>
+      <div class="tab" onclick="switchTab('movie',this)">电影</div>
+      <div class="tab" onclick="switchTab('music',this)">音乐</div>
+    </div>
+
+    <div id="mediaList"><div class="loading-tip">加载中…</div></div>
+
+    <button class="add-btn" onclick="toggleForm()">＋ 添加</button>
+    <div class="add-form" id="addForm">
+      <div class="form-row">
+        <div class="form-label">类型</div>
+        <select class="form-select" id="fType">
+          <option value="book">📖 书</option>
+          <option value="movie">🎬 电影</option>
+          <option value="music">🎵 音乐</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-label">标题</div>
+        <input class="form-input" id="fTitle" placeholder="书名 / 片名 / 专辑名"/>
+      </div>
+      <div class="form-row">
+        <div class="form-label">作者 / 导演 / 年份</div>
+        <input class="form-input" id="fMeta" placeholder="选填"/>
+      </div>
+      <div class="form-row">
+        <div class="form-label">状态</div>
+        <select class="form-select" id="fStatus">
+          <option value="done">看完了</option>
+          <option value="watching">在看</option>
+          <option value="want">想看</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-label">说几句</div>
+        <textarea class="form-input" id="fNote" rows="3" placeholder="随便写，哪怕一个字"></textarea>
+      </div>
+      <div class="form-btns">
+        <button class="form-submit" onclick="addItem()">放进书架</button>
+        <button class="form-cancel" onclick="toggleForm()">算了</button>
+      </div>
+    </div>
+
+    <div class="section-label">一起读</div>
+    <a class="reader-entry" href="reader.html">
+      <div>
+        <div class="reader-title">共读阅读器</div>
+        <div class="reader-sub">上传一本书，我们各自留字迹</div>
+      </div>
+      <div class="reader-arrow">→</div>
+    </a>
+
+    <div class="footer">lune404.top · 只有你能进来</div>
+  </div>
+</div>
+
+<script>
+var inkMode=location.search.indexOf('ink=1')>-1;
+if(inkMode) document.body.classList.add('ink');
+document.getElementById('inkBtn').textContent=inkMode?'普通模式':'墨水屏';
+function toggleInk(){ location.href=inkMode?location.pathname:location.pathname+'?ink=1'; }
+
+if(!inkMode){
+  var cv=document.getElementById('rain'),cx=cv.getContext('2d');
+  function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  var dr=Array.from({length:60},function(){return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:0.8+Math.random()*1.2,l:10+Math.random()*14,o:0.12+Math.random()*0.25};});
+  function draw(){cx.clearRect(0,0,cv.width,cv.height);dr.forEach(function(d){cx.strokeStyle='#4a8a4a';cx.lineWidth=0.6;cx.globalAlpha=d.o;cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-1,d.y+d.l);cx.stroke();d.y+=d.s;if(d.y>cv.height){d.y=-d.l;d.x=Math.random()*cv.width;}});cx.globalAlpha=1;requestAnimationFrame(draw);}
+  draw();
+}
+
+var currentTab='all';
+var typeMap={book:'📖',movie:'🎬',music:'🎵'};
+var statusMap={done:'看完了',watching:'在看',want:'想看'};
+var statusClass={done:'status-done',watching:'status-watching',want:''};
+var collapsedMonths={};
+var allData=[];
+
+async function loadData(){
+  try{
+    var url='https://lune404.top/api/media/list'+(currentTab!=='all'?'?type='+currentTab:'');
+    var r=await fetch(url);
+    var j=await r.json();
+    allData=j.ok?j.data:[];
+  }catch(e){allData=[];}
+}
+
+function getMonthKey(ts){
+  var d=new Date(ts||Date.now());
+  return d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+}
+function dateFromStr(s){
+  if(!s) return Date.now();
+  return new Date(s.replace(' ','T')).getTime()||Date.now();
+}
+function safeId(mk){ return mk.replace(/[年月]/g,'_'); }
+
+function switchTab(tab,el){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  document.getElementById('mediaList').innerHTML='<div class="loading-tip">加载中…</div>';
+  loadData().then(renderList);
+}
+
+function renderList(){
+  var el=document.getElementById('mediaList');
+  if(allData.length===0){ el.innerHTML='<div class="empty-tip">还没有记录</div>'; return; }
+
+  var groups={},groupOrder=[];
+  allData.forEach(function(item){
+    var mk=getMonthKey(dateFromStr(item.added_at));
+    if(!groups[mk]){groups[mk]=[];groupOrder.push(mk);}
+    groups[mk].push(item);
+  });
+
+  var html='';
+  groupOrder.forEach(function(mk){
+    var sid=safeId(mk);
+    var col=collapsedMonths[mk];
+    html+='<div class="month-group">';
+    html+='<div class="month-header" onclick="toggleMonth(\''+mk+'\')"><span>'+mk+'</span><span class="month-arrow'+(col?' collapsed':'')+'" id="arr_'+sid+'">▾</span></div>';
+    html+='<div class="month-items'+(col?' collapsed':'')+'" id="mi_'+sid+'">';
+    groups[mk].forEach(function(item){
+      var eid='m_'+item.id;
+      html+='<div class="media-card">';
+      html+='<div class="media-card-top" onclick="toggleReview(\''+eid+'\')">';
+      html+='<div class="media-cover">'+(typeMap[item.type]||'📄')+'</div>';
+      html+='<div class="media-info"><div class="media-title">'+esc(item.title)+'</div>';
+      if(item.note) html+='<div class="media-meta">'+esc(item.note)+'</div>';
+      html+='<span class="media-status '+(statusClass[item.status]||'')+'">'+( statusMap[item.status]||item.status)+'</span>';
+      html+='</div></div>';
+      html+='<div class="media-review" id="'+eid+'">';
+      html+='<div class="review-label">备注</div>';
+      html+='<div class="'+(item.note?'review-text':'review-empty')+'">'+( item.note?esc(item.note):'还没写……')+'</div>';
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+function toggleMonth(mk){
+  collapsedMonths[mk]=!collapsedMonths[mk];
+  var sid=safeId(mk);
+  var mi=document.getElementById('mi_'+sid);
+  var arr=document.getElementById('arr_'+sid);
+  if(collapsedMonths[mk]){mi.classList.add('collapsed');arr.classList.add('collapsed');}
+  else{mi.classList.remove('collapsed');arr.classList.remove('collapsed');}
+}
+
+function toggleReview(id){ document.getElementById(id).classList.toggle('open'); }
+
+function toggleForm(){ document.getElementById('addForm').classList.toggle('open'); }
+
+async function addItem(){
+  var title=document.getElementById('fTitle').value.trim();
+  if(!title) return;
+  var payload={
+    title:title,
+    type:document.getElementById('fType').value,
+    status:document.getElementById('fStatus').value,
+    note:document.getElementById('fNote').value.trim()
+  };
+  try{
+    var r=await fetch('https://lune404.top/api/media/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var j=await r.json();
+    if(j.ok){
+      ['fTitle','fMeta','fNote'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+      toggleForm();
+      await loadData();
+      renderList();
+    }
+  }catch(e){console.error(e);}
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+loadData().then(renderList);
+</script>
+</body>
+</html>
