@@ -178,9 +178,11 @@ function getBarClass(type) {
 }
 
 function getAuthorLabel(e) {
-  if (e.author === 'zai' || e.type === 'entry') return '🫧 崽写的';
-  if (e.type === 'work') return '🐱 顾沉·交接';
-  return '🐱 顾沉';
+  if (e.author === 'guchen') {
+    if (e.type === 'work') return '🐱 顾沉·交接';
+    return '🐱 顾沉';
+  }
+  return '🫧 崽写的';
 }
 
 // 渲染列表
@@ -238,8 +240,8 @@ async function loadEntries() {
 
 function filterAndRender() {
   let filtered = allEntries;
-  if (currentTab === 'entry') filtered = allEntries.filter(e => e.author === 'zai' || e.type === 'entry');
-  if (currentTab === 'guchen') filtered = allEntries.filter(e => e.author === 'guchen' || e.type === 'work' || e.type === 'note');
+  if (currentTab === 'entry') filtered = allEntries.filter(e => e.author === 'zai');
+  if (currentTab === 'guchen') filtered = allEntries.filter(e => e.author === 'guchen');
   renderList(filtered);
 }
 
