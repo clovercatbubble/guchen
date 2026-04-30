@@ -28,7 +28,7 @@ canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width
 .month-line { flex:1; height:0.5px; background:rgba(120,180,120,0.25); }
 .month-arrow { font-size:10px; color:#9aba9a; transition:transform 0.2s; }
 .month-arrow.closed { transform:rotate(-90deg); }
-.month-entries { overflow:hidden; transition:max-height 0.35s ease; }
+.month-entries { overflow:hidden; transition:max-height 0.35s ease; max-height:none; }
 
 .entry-card { background:rgba(252,250,245,0.75); border:0.5px solid rgba(120,180,120,0.22); border-radius:14px; margin-bottom:12px; overflow:hidden; cursor:pointer; transition:background 0.2s; }
 .entry-card:hover { background:rgba(255,255,255,0.88); }
@@ -223,7 +223,7 @@ function renderList(entries) {
       </div>
     `;
   }).join('');
-  document.querySelectorAll('.month-entries').forEach(m => { m.style.maxHeight = m.scrollHeight + 'px'; });
+  document.querySelectorAll('.month-entries').forEach(m => { m.style.maxHeight = 'none'; });
 }
 
 // 加载所有日记
@@ -312,8 +312,8 @@ function showList() {
 
 function toggleMonth(header) {
   const m = header.nextElementSibling, a = header.querySelector('.month-arrow');
-  if (m.style.maxHeight && m.style.maxHeight !== '0px') { m.style.maxHeight = '0px'; a.classList.add('closed'); }
-  else { m.style.maxHeight = m.scrollHeight + 'px'; a.classList.remove('closed'); }
+  if (m.style.maxHeight && m.style.maxHeight !== '0px' && m.style.maxHeight !== 'none') { m.style.maxHeight = '0px'; a.classList.add('closed'); }
+  else { m.style.maxHeight = 'none'; a.classList.remove('closed'); }
 }
 
 // 写日记弹窗
