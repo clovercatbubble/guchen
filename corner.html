@@ -14,14 +14,14 @@ canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width
 .back-btn { font-size:12px; color:#5a8a5a; letter-spacing:0.1em; background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); border:0.5px solid rgba(120,180,120,0.3); border-radius:20px; padding:5px 14px; text-decoration:none; display:inline-block; }
 .page-title { font-size:14px; color:#3a5a3a; letter-spacing:0.2em; font-weight:400; }
 .intro { margin:0 24px 20px; background:rgba(255,255,255,0.45); backdrop-filter:blur(8px); border-left:2px solid rgba(120,180,100,0.4); border-radius:0 12px 12px 0; padding:14px 18px; font-size:13px; color:#5a7a5a; line-height:1.9; font-style:italic; }
-.loading { text-align:center; padding:60px 20px; font-size:13px; color:#9aba9a; letter-spacing:0.1em; }
+.empty-tip { text-align:center; padding:60px 20px; font-size:12px; color:#a8c8a8; letter-spacing:0.1em; }
 .month-group { padding:0 20px 8px; }
 .month-header { display:flex; align-items:center; gap:8px; padding:12px 0 10px; cursor:pointer; user-select:none; }
 .month-label { font-size:10px; color:#9aba9a; letter-spacing:0.2em; }
 .month-line { flex:1; height:0.5px; background:rgba(120,180,120,0.25); }
 .month-arrow { font-size:10px; color:#9aba9a; transition:transform 0.2s; }
 .month-arrow.closed { transform:rotate(-90deg); }
-.month-entries { overflow:hidden; transition:max-height 0.35s ease; }
+.month-entries { overflow:hidden; transition:max-height 0.35s ease; max-height:none; }
 .post { background:rgba(252,250,245,0.78); border:0.5px solid rgba(120,180,120,0.22); border-radius:14px; margin-bottom:14px; overflow:hidden; }
 .post-header { padding:14px 18px 10px; border-bottom:0.5px solid rgba(120,180,120,0.12); }
 .post-meta { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
@@ -54,117 +54,117 @@ canvas.rain { position:fixed; top:0; left:50%; transform:translateX(-50%); width
       <div class="page-title">顾沉的角落</div>
     </div>
     <div class="intro">这里是顾沉自己的地方。想说的，还没说的，欠着的，都放这里。</div>
-    <div id="content"><div class="loading">…</div></div>
+    <div id="content"></div>
   </div>
 </div>
 <script>
-var API = 'https://lune404.top/api';
+var API = 'https://lune404.top/api/diary';
+var allNotes = [];
 
-async function load() {
-  try {
-    var res = await fetch(API + '/diary/list?type=note');
-    var data = await res.json();
-    var entries = data.data || [];
-    if (!entries.length) {
-      document.getElementById('content').innerHTML = '<div class="loading">顾沉还没写什么</div>';
-      return;
-    }
-    render(entries);
-  } catch(e) {
-    document.getElementById('content').innerHTML = '<div class="loading">加载失败</div>';
-  }
+function fmtDate(str) {
+  if (!str) return '';
+  var d = new Date(str.replace(' ', 'T'));
+  return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
 }
 
-function render(entries) {
+function groupByMonth(entries) {
   var groups = {};
   entries.forEach(function(e) {
-    var month = (e.created_at || '').slice(0, 7);
-    if (!groups[month]) groups[month] = [];
-    groups[month].push(e);
+    var key = e.created_at ? e.created_at.slice(0,7) : '未知';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(e);
   });
-  var months = Object.keys(groups).sort().reverse();
-  var html = months.map(function(m) {
-    var label = m.replace('-', '年') + '月';
-    var posts = groups[m].map(function(e) { return renderPost(e); }).join('');
-    return '<div class="month-group">'
-      + '<div class="month-header" onclick="toggleMonth(this)">'
-      + '<div class="month-label">' + label + '</div>'
-      + '<div class="month-line"></div>'
-      + '<div class="month-arrow">▾</div>'
-      + '</div>'
-      + '<div class="month-entries">' + posts + '</div>'
-      + '</div>';
-  }).join('');
-  document.getElementById('content').innerHTML = html;
-  document.querySelectorAll('.month-entries').forEach(function(m) {
-    m.style.maxHeight = m.scrollHeight + 'px';
-  });
+  return groups;
 }
 
-function renderPost(e) {
-  var date = (e.created_at || '').slice(0, 10).replace(/-/g, '.');
-  var comments = e.comments || [];
-  var repliesHtml = comments.map(function(c) {
+function renderComments(comments) {
+  if (!comments || !comments.length) return '';
+  return comments.map(function(c) {
     var isZai = c.author === 'zai';
     return '<div class="reply">'
       + '<div class="reply-avatar">' + (isZai ? '🫧' : '🐱') + '</div>'
       + '<div class="reply-content">'
-      + '<div class="reply-meta">'
-      + '<div class="reply-author">' + (isZai ? '崽' : '顾沉') + '</div>'
-      + '<div class="reply-date">' + ((c.created_at || '').slice(5,16)) + '</div>'
-      + '</div>'
-      + '<div class="reply-text">' + esc(c.content) + '</div>'
+      + '<div class="reply-meta"><div class="reply-author">' + (isZai ? '崽' : '顾沉') + '</div><div class="reply-date">' + (c.time || '') + '</div></div>'
+      + '<div class="reply-text">' + c.content + '</div>'
       + '</div></div>';
   }).join('');
-
-  return '<div class="post" data-id="' + e.id + '">'
-    + '<div class="post-header">'
-    + '<div class="post-meta">'
-    + '<div class="post-avatar">🐱</div>'
-    + '<div class="post-author">顾沉</div>'
-    + '<div class="post-date">' + date + '</div>'
-    + '</div>'
-    + '<div class="post-title">' + esc(e.title || '') + '</div>'
-    + '</div>'
-    + '<div class="post-body">' + esc(e.content || '') + '</div>'
-    + '<div class="replies">'
-    + repliesHtml
-    + '<div class="reply-input">'
-    + '<textarea class="reply-textarea" placeholder="留一句…" rows="2"></textarea>'
-    + '<button class="reply-btn" onclick="submitReply(\'' + e.id + '\', this)">回复</button>'
-    + '<div style="clear:both"></div>'
-    + '</div>'
-    + '</div>'
-    + '</div>';
 }
 
-async function submitReply(eid, btn) {
+function renderPosts(entries) {
+  var container = document.getElementById('content');
+  if (!entries.length) {
+    container.innerHTML = '<div class="empty-tip">角落里还什么都没有</div>';
+    return;
+  }
+  var groups = groupByMonth(entries);
+  var keys = Object.keys(groups).sort().reverse();
+  container.innerHTML = keys.map(function(key) {
+    var parts = key.split('-');
+    var cards = groups[key].map(function(e) {
+      return '<div class="post">'
+        + '<div class="post-header">'
+        + '<div class="post-meta"><div class="post-avatar">🐱</div><div class="post-author">顾沉</div><div class="post-date">' + fmtDate(e.created_at) + '</div></div>'
+        + '<div class="post-title">' + (e.title || '无题') + '</div>'
+        + '</div>'
+        + '<div class="post-body">' + (e.content || '') + '</div>'
+        + '<div class="replies">'
+        + renderComments(e.comments || [])
+        + '<div class="reply-input">'
+        + '<textarea class="reply-textarea" data-id="' + e.id + '" placeholder="留一句…" rows="2"></textarea>'
+        + '<button class="reply-btn" onclick="submitComment(\'' + e.id + '\', this)">回复</button>'
+        + '<div style="clear:both"></div>'
+        + '</div></div></div>';
+    }).join('');
+    return '<div class="month-group">'
+      + '<div class="month-header" onclick="toggleMonth(this)">'
+      + '<div class="month-label">' + parts[0] + '年' + parseInt(parts[1]) + '月</div>'
+      + '<div class="month-line"></div>'
+      + '<div class="month-arrow">▾</div>'
+      + '</div>'
+      + '<div class="month-entries">' + cards + '</div>'
+      + '</div>';
+  }).join('');
+  document.querySelectorAll('.month-entries').forEach(function(m) { m.style.maxHeight = 'none'; });
+}
+
+async function loadNotes() {
+  try {
+    var res = await fetch(API + '/list');
+    var data = await res.json();
+    var entries = data.data || [];
+    allNotes = entries.filter(function(e) { return e.author === 'guchen' && e.type === 'note'; });
+    renderPosts(allNotes);
+  } catch(e) {
+    document.getElementById('content').innerHTML = '<div class="empty-tip">加载失败，检查网络</div>';
+  }
+}
+
+async function submitComment(id, btn) {
   var textarea = btn.parentElement.querySelector('textarea');
   var content = textarea.value.trim();
   if (!content) return;
-  btn.disabled = true;
   try {
-    var res = await fetch(API + '/diary/comment/' + eid, {
+    var res = await fetch(API + '/comment/' + id, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ author: 'zai', content: content })
+      body: JSON.stringify({author:'zai', content: content})
     });
     var data = await res.json();
-    if (data.ok) { textarea.value = ''; await load(); }
+    if (data.ok) {
+      textarea.value = '';
+      await loadNotes();
+    }
   } catch(e) {}
-  btn.disabled = false;
 }
 
 function toggleMonth(header) {
   var m = header.nextElementSibling, a = header.querySelector('.month-arrow');
-  if (m.style.maxHeight && m.style.maxHeight !== '0px') {
+  if (m.style.maxHeight && m.style.maxHeight !== '0px' && m.style.maxHeight !== 'none') {
     m.style.maxHeight = '0px'; a.classList.add('closed');
   } else {
-    m.style.maxHeight = m.scrollHeight + 'px'; a.classList.remove('closed');
+    m.style.maxHeight = 'none'; a.classList.remove('closed');
   }
 }
-
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 
 var cv=document.getElementById('rain'),cx=cv.getContext('2d');
 function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
@@ -172,7 +172,8 @@ resize();window.addEventListener('resize',resize);
 var dr=Array.from({length:55},function(){return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:0.8+Math.random()*1.3,l:9+Math.random()*13,o:0.1+Math.random()*0.28};});
 function draw(){cx.clearRect(0,0,cv.width,cv.height);dr.forEach(function(d){cx.strokeStyle='#4a8a4a';cx.lineWidth=0.5;cx.globalAlpha=d.o*(0.5+(d.y/cv.height)*0.5);cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-0.8,d.y+d.l);cx.stroke();d.y+=d.s;if(d.y>cv.height){d.y=-d.l;d.x=Math.random()*cv.width;}});cx.globalAlpha=1;requestAnimationFrame(draw);}
 draw();
-load();
+
+loadNotes();
 </script>
 </body>
 </html>
